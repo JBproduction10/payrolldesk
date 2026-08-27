@@ -1,0 +1,288 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Search, Plus, Pencil, Trash2, Wallet, History } from "lucide-react";
+import { usePayroll } from "@/lib/store";
+import { money, periodLabel } from "@/lib/format";
+import { paymentFor, paymentsForStudent, schoolFinancials } from "@/lib/aggregate";
+import type { FeeStatus } from "@/lib/types";
+import { cycleLabel } from "@/lib/academic";
+import { PageHeader } from "@/components/payroll/page-header";
+import { StatCard } from "@/components/payroll/stat-card";
+import { PeriodSwitcher } from "@/components/payroll/period-switcher";
+import { FeeStatusBadge } from "@/components/payroll/status-badges";
+import { StudentFormDialog } from "@/components/payroll/student-form-dialog";
+import { RecordPaymentDialog } from "@/components/payroll/record-payment-dialog";
+import { PaymentHistoryDialog } from "@/components/payroll/payment-history-dialog";
+import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog";
+import { TrashDialog } from "@/components/payroll/trash-dialog";
+import { TablePagination } from "@/components/payroll/table-pagination";
+import { usePagination } from "@/lib/use-pagination";
+import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const STATUS_TABS: { key: "all" | FeeStatus | "none"; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "paid", label: "Paid" },
+  { key: "partial", label: "Partial" },
+  { key: "unpaid", label: "Unpaid" },
+  { key: "social_case", label: "Social Cases" },
+  { key: "none", label: "Not recorded" },
+];
+
+export default function StudentsPage() {
+  const {
+    activeClient,
+    clientStudents,
+    clientFeePayments,
+    deletedStudents,
+    period,
+    removeStudent,
+    restoreStudent,
+  } = usePayroll();
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | FeeStatus | "none">("all");
+
+  const finance = useMemo(
+    () => schoolFinancials(clientStudents, clientFeePayments, [], period),
+    [clientStudents, clientFeePayments, period],
+  );
+
+  const filtered = clientStudents.filter((s) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery =
+      !q || s.name.toLowerCase().includes(q) || s.className.toLowerCase().includes(q);
+    const record = paymentFor(clientFeePayments, s.id, period);
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "none" ? !record : record?.status === statusFilter);
+    return matchesQuery && matchesStatus;
+  });
+
+  const { page, setPage, pageCount, pageRows, from, to, total, resetPage } =
+    usePagination(filtered, 25);
+
+  function handleDelete(id: string, name: string) {
+    removeStudent(id);
+    toast.add({
+      title: `Removed ${name}`,
+      type: "success",
+      actionProps: {
+        children: "Undo",
+        onClick: () => restoreStudent(id),
+      },
+    });
+  }
+
+  return (
+    <>
+      <PageHeader
+        title="Students"
+        description={`${clientStudents.length} students enrolled at ${activeClient.name}`}
+        action={
+          <div className="flex items-center gap-2">
+            <PeriodSwitcher />
+            <TrashDialog
+              trigger={
+                <Button variant="outline">
+                  <Trash2 className="size-4" />
+                  Trash
+                  {deletedStudents.length > 0 ? ` (${deletedStudents.length})` : ""}
+                </Button>
+              }
+              title="Deleted students"
+              emptyLabel="No deleted students for this school."
+              rows={deletedStudents.map((s) => ({
+                id: s.id,
+                name: s.name,
+                deletedAt: s.deletedAt,
+                meta: s.className,
+              }))}
+              onRestore={restoreStudent}
+            />
+            <StudentFormDialog
+              trigger={
+                <Button>
+                  <Plus className="size-4" />
+                  Add Student
+                </Button>
+              }
+            />
+          </div>
+        }
+      />
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Students" value={finance.studentCount} />
+        <StatCard
+          label={`Fees collected — ${periodLabel(period)}`}
+          value={money(finance.feesCollected, activeClient.currency)}
+          className="border-success/30 bg-success/5"
+        />
+        <StatCard
+          label="Fees outstanding"
+          value={money(finance.feesOutstanding, activeClient.currency)}
+          trend={<span>{finance.unpaidCount} unpaid · {finance.socialCaseCount} social cases</span>}
+        />
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              resetPage();
+            }}
+            placeholder="Search name, class…"
+            className="h-9 pl-9"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card p-1">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setStatusFilter(tab.key);
+                resetPage();
+              }}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                statusFilter === tab.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Student</TableHead>
+                <TableHead>Class</TableHead>
+                <TableHead>Monthly Fee</TableHead>
+                <TableHead>Paid ({periodLabel(period)})</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pageRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    No students match your filters.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pageRows.map((s) => {
+                  const record = paymentFor(clientFeePayments, s.id, period);
+                  const history = paymentsForStudent(clientFeePayments, s.id);
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <div className="font-medium text-foreground">{s.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {s.guardianContact || "No guardian contact on file"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                          {s.className}
+                        </span>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {cycleLabel(s.cycle)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        {money(s.monthlyFee, activeClient.currency)}
+                      </TableCell>
+                      <TableCell className="font-medium text-foreground">
+                        {money(record?.amountPaid ?? 0, activeClient.currency)}
+                      </TableCell>
+                      <TableCell>
+                        <FeeStatusBadge status={record?.status ?? "unpaid"} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <PaymentHistoryDialog
+                            studentName={s.name}
+                            schoolName={activeClient.name}
+                            monthlyFee={s.monthlyFee}
+                            currency={activeClient.currency}
+                            payments={history}
+                            trigger={
+                              <Button variant="ghost" size="icon-sm">
+                                <History className="size-3.5" />
+                              </Button>
+                            }
+                          />
+                          <RecordPaymentDialog
+                            student={s}
+                            period={period}
+                            payment={record}
+                            trigger={
+                              <Button variant="outline" size="sm">
+                                <Wallet className="size-3.5" />
+                                Payment
+                              </Button>
+                            }
+                          />
+                          <StudentFormDialog
+                            student={s}
+                            trigger={
+                              <Button variant="ghost" size="icon-sm">
+                                <Pencil className="size-3.5" />
+                              </Button>
+                            }
+                          />
+                          <ConfirmDeleteDialog
+                            title={`Remove ${s.name}?`}
+                            description="This moves the student to Trash along with their payment history. You can restore them anytime."
+                            onConfirm={() => handleDelete(s.id, s.name)}
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            }
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          from={from}
+          to={to}
+          total={total}
+          onPageChange={setPage}
+          itemLabel="students"
+        />
+      </div>
+    </>
+  );
+}

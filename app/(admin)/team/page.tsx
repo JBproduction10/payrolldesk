@@ -1,0 +1,266 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Trash2, UserCog, Send, Check, Copy, Pencil, Download } from "lucide-react";
+import { usePayroll } from "@/lib/store";
+import type { Role } from "@/lib/types";
+import { PageHeader } from "@/components/payroll/page-header";
+import { TeamFormDialog, type TeamMember } from "@/components/payroll/team-form-dialog";
+import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const ROLE_LABEL: Record<Role, string> = {
+  super_admin: "Super admin",
+  promoter: "Promoter",
+  school_admin: "School admin",
+  teacher: "Teacher",
+  finance: "Finance staff",
+  treasury: "Treasury",
+  cashier: "Cashier",
+  intendance: "Intendance",
+};
+
+export default function TeamPage() {
+  const { clients, employees } = usePayroll();
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [resendLink, setResendLink] = useState<{ email: string; link: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/team", { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok) setMembers(data.members);
+    } catch {
+      toast.add({ title: "Couldn't load your team", type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleDelete(id: string) {
+    const res = await fetch(`/api/team/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setMembers((m) => m.filter((x) => x.id !== id));
+      toast.add({ title: "Account removed", type: "success" });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.add({ title: data.error || "Could not remove that account", type: "error" });
+    }
+  }
+
+  async function handleResend(member: TeamMember) {
+    const res = await fetch(`/api/team/${member.id}`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.add({ title: data.error || "Could not resend the invite", type: "error" });
+      return;
+    }
+    if (data.inviteSent) {
+      toast.add({ title: `Invite resent to ${member.email}`, type: "success" });
+    } else {
+      setResendLink({ email: member.email, link: data.inviteLink });
+    }
+  }
+
+  async function copyLink() {
+    if (!resendLink) return;
+    try {
+      await navigator.clipboard.writeText(resendLink.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.add({ title: "Could not copy — select and copy the link manually", type: "error" });
+    }
+  }
+
+  const clientName = (id: string | null) =>
+    id ? clients.find((c) => c.id === id)?.name ?? "—" : "All schools";
+  const employeeName = (id: string | null) =>
+    id ? employees.find((e) => e.id === id)?.name ?? "—" : "—";
+
+  return (
+    <>
+      <PageHeader
+        title="Team & Access"
+        description="Give the promoter, school admins, teachers and finance staff their own logins"
+        action={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={
+                <a href="/api/export" download>
+                  <Download className="size-4" />
+                  Download full backup
+                </a>
+              }
+            />
+            <TeamFormDialog onSaved={load} />
+          </div>
+        }
+      />
+
+      <div className="mb-6 flex items-start gap-3 rounded-2xl border border-border bg-secondary/60 p-4">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+          <UserCog className="size-4.5" />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">How access works</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Everyone you add here gets an email invite to set their own password — there's
+            no signup page, so this is the only way in. A promoter sees a read-only balance
+            sheet across every school, a school admin manages students & expenses for one
+            school, finance staff can view and print all payslips for one school, and a
+            teacher only ever sees their own payslips.
+          </p>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>School</TableHead>
+                <TableHead>Linked employee</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    Loading team…
+                  </TableCell>
+                </TableRow>
+              ) : members.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    No team members yet — add your promoter, school admins or teachers above.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                members.map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      <div className="font-medium text-foreground">{m.name}</div>
+                      <div className="text-xs text-muted-foreground">{m.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                        {ROLE_LABEL[m.role]}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {clientName(m.clientId)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {m.role === "teacher" ? employeeName(m.employeeId) : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                          m.status === "active"
+                            ? "bg-success/12 text-success"
+                            : "bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
+                        }`}
+                      >
+                        {m.status === "active" ? "Active" : "Invite pending"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {m.status === "pending" && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleResend(m)}
+                            aria-label="Resend invite"
+                          >
+                            <Send className="size-3.5" />
+                          </Button>
+                        )}
+                        <TeamFormDialog
+                          member={m}
+                          onSaved={load}
+                          trigger={
+                            <Button variant="ghost" size="icon-sm" aria-label="Edit">
+                              <Pencil className="size-3.5" />
+                            </Button>
+                          }
+                        />
+                        <ConfirmDeleteDialog
+                          title={`Remove ${m.name}?`}
+                          description="They'll no longer be able to sign in."
+                          onConfirm={() => handleDelete(m.id)}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <Dialog open={Boolean(resendLink)} onOpenChange={(next) => !next && setResendLink(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite link ready</DialogTitle>
+            <DialogDescription>
+              Email delivery isn't configured — copy this link and send it to{" "}
+              {resendLink?.email} yourself.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-2">
+            <Input readOnly value={resendLink?.link ?? ""} className="text-xs" />
+            <Button variant="outline" size="icon" onClick={copyLink}>
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setResendLink(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
