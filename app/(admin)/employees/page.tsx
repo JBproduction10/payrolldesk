@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/payroll/page-header";
 import { InitialsAvatar } from "@/components/payroll/initials-avatar";
 import { EmployeeStatusBadge } from "@/components/payroll/status-badges";
 import { EmployeeFormDialog } from "@/components/payroll/employee-form-dialog";
+import { ImportEmployeesDialog } from "@/components/payroll/import-employees-dialog";
 import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog";
 import { TrashDialog } from "@/components/payroll/trash-dialog";
 import { TablePagination } from "@/components/payroll/table-pagination";
@@ -110,6 +111,7 @@ export default function EmployeesPage() {
               }))}
               onRestore={restoreEmployee}
             />
+            <ImportEmployeesDialog />
             <EmployeeFormDialog
               trigger={
                 <Button>

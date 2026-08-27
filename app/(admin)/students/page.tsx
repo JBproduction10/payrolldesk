@@ -12,6 +12,7 @@ import { StatCard } from "@/components/payroll/stat-card";
 import { PeriodSwitcher } from "@/components/payroll/period-switcher";
 import { FeeStatusBadge } from "@/components/payroll/status-badges";
 import { StudentFormDialog } from "@/components/payroll/student-form-dialog";
+import { ImportStudentsDialog } from "@/components/payroll/import-students-dialog";
 import { RecordPaymentDialog } from "@/components/payroll/record-payment-dialog";
 import { PaymentHistoryDialog } from "@/components/payroll/payment-history-dialog";
 import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog";
@@ -109,6 +110,7 @@ export default function StudentsPage() {
               }))}
               onRestore={restoreStudent}
             />
+            <ImportStudentsDialog />
             <StudentFormDialog
               trigger={
                 <Button>
