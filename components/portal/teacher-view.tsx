@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations, useLocale } from "next-intl";
 import { Eye, ReceiptText } from "lucide-react";
 import { money, periodLabel } from "@/lib/format";
 import type { Client, Employee, Payslip } from "@/lib/types";
@@ -14,14 +17,16 @@ export function TeacherView({
   employee: Employee;
   payslips: Payslip[];
 }) {
+  const t = useTranslations("teacherView");
+  const locale = useLocale() as "en" | "fr";
   return (
     <div>
       <div className="mb-6">
         <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground">
-          My Payslips
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {employee.name} · {employee.position} · {client.name}
+          {t("description", { name: employee.name, position: employee.position, schoolName: client.name })}
         </p>
       </div>
 
@@ -29,7 +34,7 @@ export function TeacherView({
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
           <ReceiptText className="size-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            No payslips have been generated for you yet.
+            {t("noPayslipsYet")}
           </p>
         </div>
       ) : (
@@ -38,28 +43,28 @@ export function TeacherView({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                  <th className="px-4 py-3 font-medium">Period</th>
-                  <th className="px-4 py-3 font-medium">Gross</th>
-                  <th className="px-4 py-3 font-medium">Deductions</th>
-                  <th className="px-4 py-3 font-medium">Net Pay</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 text-right font-medium">View</th>
+                  <th className="px-4 py-3 font-medium">{t("columnPeriod")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnGross")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnDeductions")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnNetPay")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t("columnView")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {payslips.map((p) => (
                   <tr key={p.id}>
                     <td className="px-4 py-3 font-medium text-foreground">
-                      {periodLabel(p.period)}
+                      {periodLabel(p.period, locale)}
                     </td>
                     <td className="px-4 py-3 text-foreground">
-                      {money(p.gross, client.currency)}
+                      {money(p.gross, client.currency, locale)}
                     </td>
                     <td className="px-4 py-3 text-destructive">
-                      −{money(p.totalDeductions, client.currency)}
+                      −{money(p.totalDeductions, client.currency, locale)}
                     </td>
                     <td className="px-4 py-3 font-medium text-foreground">
-                      {money(p.net, client.currency)}
+                      {money(p.net, client.currency, locale)}
                     </td>
                     <td className="px-4 py-3">
                       <PayslipStatusBadge status={p.status} />
@@ -74,7 +79,7 @@ export function TeacherView({
                         trigger={
                           <Button variant="outline" size="sm">
                             <Eye className="size-3.5" />
-                            View
+                            {t("view")}
                           </Button>
                         }
                       />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { FeePayment, FeeStatus, Student } from "@/lib/types";
 import { money, periodLabel } from "@/lib/format";
@@ -37,6 +38,8 @@ export function RecordPaymentDialog({
   /** This student's existing payment record for `period`, if one exists yet. */
   payment?: FeePayment;
 }) {
+  const t = useTranslations("recordPaymentDialog");
+  const locale = useLocale() as "en" | "fr";
   const { activeClient, recordPayment } = usePayroll();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(String(payment?.amountPaid ?? 0));
@@ -60,7 +63,7 @@ export function RecordPaymentDialog({
     const n = Math.max(0, Number(amount) || 0);
     recordPayment(student.id, period, n, status);
     toast.add({
-      title: `Recorded ${periodLabel(period)} payment for ${student.name}`,
+      title: t("recordedToast", { period: periodLabel(period, locale), name: student.name }),
       type: "success",
     });
     setOpen(false);
@@ -71,16 +74,20 @@ export function RecordPaymentDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Record payment</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            {student.name} · {student.className} · {periodLabel(period)} · Monthly fee{" "}
-            {money(student.monthlyFee, activeClient.currency)}
+            {t("description", {
+              name: student.name,
+              className: student.className,
+              period: periodLabel(period, locale),
+              fee: money(student.monthlyFee, activeClient.currency, locale),
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rp-amount">Amount paid ({activeClient.currency})</Label>
+            <Label htmlFor="rp-amount">{t("amountPaid", { currency: activeClient.currency })}</Label>
             <Input
               id="rp-amount"
               type="number"
@@ -91,31 +98,31 @@ export function RecordPaymentDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rp-status">Status</Label>
+            <Label htmlFor="rp-status">{t("status")}</Label>
             <NativeSelect
               id="rp-status"
               className="w-full"
               value={status}
               onChange={(e) => setStatus(e.target.value as FeeStatus)}
             >
-              <NativeSelectOption value="paid">Paid</NativeSelectOption>
-              <NativeSelectOption value="partial">Partial</NativeSelectOption>
-              <NativeSelectOption value="unpaid">Unpaid</NativeSelectOption>
+              <NativeSelectOption value="paid">{t("statusPaid")}</NativeSelectOption>
+              <NativeSelectOption value="partial">{t("statusPartial")}</NativeSelectOption>
+              <NativeSelectOption value="unpaid">{t("statusUnpaid")}</NativeSelectOption>
               <NativeSelectOption value="social_case">
-                Social case (fee waived)
+                {t("statusSocialCase")}
               </NativeSelectOption>
             </NativeSelect>
             <p className="text-xs text-muted-foreground">
-              Status updates automatically from the amount — override it for social cases.
+              {t("statusHint")}
             </p>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
-          <Button onClick={handleSubmit}>Save Payment</Button>
+          <Button onClick={handleSubmit}>{t("savePayment")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

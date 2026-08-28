@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Copy, Mail } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import type { Role } from "@/lib/types";
@@ -30,42 +31,14 @@ export interface TeamMember {
   createdAt: string;
 }
 
-const ROLE_OPTIONS: { value: Role; label: string; hint: string }[] = [
-  {
-    value: "promoter",
-    label: "Promoter",
-    hint: "Read-only balance sheet across every school",
-  },
-  {
-    value: "treasury",
-    label: "Treasury (Bonté Service)",
-    hint: "Approves fund requests and records payouts across every school",
-  },
-  {
-    value: "school_admin",
-    label: "School admin",
-    hint: "Read-only roster & finances for one school, sends requests to Treasury",
-  },
-  {
-    value: "cashier",
-    label: "Cashier",
-    hint: "Enrolls students and records fee payments for one school",
-  },
-  {
-    value: "finance",
-    label: "Finance staff",
-    hint: "Verifies student fee status & payslips for one school, read-only",
-  },
-  {
-    value: "intendance",
-    label: "Intendance & Logistics",
-    hint: "Supplies & inventory for one school (coming soon)",
-  },
-  {
-    value: "teacher",
-    label: "Teacher",
-    hint: "Sees only their own payslips",
-  },
+const ROLE_KEYS: { value: Role; labelKey: string; hintKey: string }[] = [
+  { value: "promoter", labelKey: "roleLabel", hintKey: "roleHintPromoter" },
+  { value: "treasury", labelKey: "roleTreasury", hintKey: "roleHintTreasury" },
+  { value: "school_admin", labelKey: "roleSchoolAdmin", hintKey: "roleHintSchoolAdmin" },
+  { value: "cashier", labelKey: "roleCashier", hintKey: "roleHintCashier" },
+  { value: "finance", labelKey: "roleFinance", hintKey: "roleHintFinance" },
+  { value: "intendance", labelKey: "roleIntendance", hintKey: "roleHintIntendance" },
+  { value: "teacher", labelKey: "roleTeacher", hintKey: "roleHintTeacher" },
 ];
 
 interface InviteResult {
@@ -86,6 +59,7 @@ export function TeamFormDialog({
   trigger?: React.ReactElement;
   onSaved: () => void;
 }) {
+  const t = useTranslations("teamForm");
   const { clients, employees } = usePayroll();
   const isEdit = Boolean(member);
   const [open, setOpen] = useState(false);
@@ -149,10 +123,10 @@ export function TeamFormDialog({
         });
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error || "Could not update the account.");
+          setError(data.error || t("updateErrorFallback"));
           return;
         }
-        toast.add({ title: `Updated ${name.trim()}`, type: "success" });
+        toast.add({ title: t("updatedToast", { name: name.trim() }), type: "success" });
         setOpen(false);
         onSaved();
         return;
@@ -171,7 +145,7 @@ export function TeamFormDialog({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not create the account.");
+        setError(data.error || t("createErrorFallback"));
         return;
       }
       setResult({
@@ -182,7 +156,7 @@ export function TeamFormDialog({
       });
       onSaved();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("genericError"));
     } finally {
       setLoading(false);
     }
@@ -195,29 +169,26 @@ export function TeamFormDialog({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.add({ title: "Could not copy — select and copy the link manually", type: "error" });
+      toast.add({ title: t("copyErrorToast"), type: "error" });
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={trigger ?? <Button>Add Team Member</Button>} />
+      <DialogTrigger render={trigger ?? <Button>{t("addTeamMember")}</Button>} />
       <DialogContent className="sm:max-w-md">
         {result ? (
           <>
             <DialogHeader>
-              <DialogTitle>{result.name} has been added</DialogTitle>
+              <DialogTitle>{t("addedTitle", { name: result.name })}</DialogTitle>
               <DialogDescription>
                 {result.inviteSent ? (
                   <span className="flex items-center gap-1.5">
                     <Mail className="size-3.5" />
-                    An invite email was sent to {result.email} to set their password.
+                    {t("inviteSentDescription", { email: result.email })}
                   </span>
                 ) : (
-                  <>
-                    Email delivery isn't configured — copy this link and send it to{" "}
-                    {result.email} yourself. It lets them set their password and expires in 7 days.
-                  </>
+                  t("noEmailDescription", { email: result.email })
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -232,17 +203,17 @@ export function TeamFormDialog({
             )}
 
             <DialogFooter>
-              <Button onClick={() => setOpen(false)}>Done</Button>
+              <Button onClick={() => setOpen(false)}>{t("done")}</Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{isEdit ? "Edit team member" : "Add team member"}</DialogTitle>
+              <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
               <DialogDescription>
                 {isEdit
-                  ? "Update their role or which school they're scoped to."
-                  : "They'll get an email invite to set their own password — no password to hand out yourself."}
+                  ? t("editDescription")
+                  : t("addDescription")}
               </DialogDescription>
             </DialogHeader>
 
@@ -254,7 +225,7 @@ export function TeamFormDialog({
               )}
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tf-role">Role</Label>
+                <Label htmlFor="tf-role">{t("role")}</Label>
                 <NativeSelect
                   id="tf-role"
                   className="w-full"
@@ -265,24 +236,24 @@ export function TeamFormDialog({
                     setEmployeeId("");
                   }}
                 >
-                  {ROLE_OPTIONS.map((r) => (
+                  {ROLE_KEYS.map((r) => (
                     <NativeSelectOption key={r.value} value={r.value}>
-                      {r.label}
+                      {t(r.labelKey)}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>
                 <p className="text-xs text-muted-foreground">
-                  {ROLE_OPTIONS.find((r) => r.value === role)?.hint}
+                  {t(ROLE_KEYS.find((r) => r.value === role)?.hintKey ?? "roleHintPromoter")}
                 </p>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tf-name">Full name</Label>
+                <Label htmlFor="tf-name">{t("fullName")}</Label>
                 <Input id="tf-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tf-email">Email</Label>
+                <Label htmlFor="tf-email">{t("email")}</Label>
                 <Input
                   id="tf-email"
                   type="email"
@@ -292,15 +263,14 @@ export function TeamFormDialog({
                 />
                 {isEdit && (
                   <p className="text-xs text-muted-foreground">
-                    Email can't be changed here — remove and re-invite them to use a
-                    different address.
+                    {t("emailLockedHint")}
                   </p>
                 )}
               </div>
 
               {needsClient && (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="tf-client">School</Label>
+                  <Label htmlFor="tf-client">{t("school")}</Label>
                   <NativeSelect
                     id="tf-client"
                     className="w-full"
@@ -310,7 +280,7 @@ export function TeamFormDialog({
                       setEmployeeId("");
                     }}
                   >
-                    <NativeSelectOption value="">Select a school</NativeSelectOption>
+                    <NativeSelectOption value="">{t("selectSchool")}</NativeSelectOption>
                     {clients.map((c) => (
                       <NativeSelectOption key={c.id} value={c.id}>
                         {c.name}
@@ -322,7 +292,7 @@ export function TeamFormDialog({
 
               {needsEmployee && (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="tf-employee">Employee record</Label>
+                  <Label htmlFor="tf-employee">{t("employeeRecord")}</Label>
                   <NativeSelect
                     id="tf-employee"
                     className="w-full"
@@ -331,7 +301,7 @@ export function TeamFormDialog({
                     disabled={!clientId}
                   >
                     <NativeSelectOption value="">
-                      {clientId ? "Select an employee" : "Pick a school first"}
+                      {clientId ? t("selectEmployee") : t("pickSchoolFirst")}
                     </NativeSelectOption>
                     {employeeOptions.map((e) => (
                       <NativeSelectOption key={e.id} value={e.id}>
@@ -345,16 +315,16 @@ export function TeamFormDialog({
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t("cancel")}
               </Button>
               <Button onClick={handleSubmit} disabled={!valid || loading}>
                 {loading
                   ? isEdit
-                    ? "Saving…"
-                    : "Sending invite…"
+                    ? t("saving")
+                    : t("sendingInvite")
                   : isEdit
-                    ? "Save changes"
-                    : "Send invite"}
+                    ? t("saveChanges")
+                    : t("sendInvite")}
               </Button>
             </DialogFooter>
           </>

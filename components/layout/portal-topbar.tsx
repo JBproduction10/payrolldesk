@@ -2,16 +2,22 @@
 
 import { ReceiptText, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "./language-switcher";
 
-const ROLE_LABEL: Record<string, string> = {
-  promoter: "Promoter",
-  school_admin: "School Admin",
-  teacher: "Teacher",
-  finance: "Finance",
+const ROLE_LABEL_KEY: Record<string, string> = {
+  promoter: "rolePromoter",
+  school_admin: "roleSchoolAdmin",
+  teacher: "roleTeacher",
+  finance: "roleFinance",
+  treasury: "roleTreasury",
+  cashier: "roleCashier",
+  intendance: "roleIntendance",
 };
 
 export function PortalTopbar() {
+  const t = useTranslations("portalTopbar");
   const { data: session } = useSession();
   const role = session?.user?.role;
 
@@ -29,7 +35,7 @@ export function PortalTopbar() {
       <div className="ml-auto flex items-center gap-3">
         {role && (
           <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
-            {ROLE_LABEL[role] ?? role}
+            {role in ROLE_LABEL_KEY ? t(ROLE_LABEL_KEY[role]) : role}
           </span>
         )}
         <div className="hidden text-right leading-tight sm:block">
@@ -38,11 +44,12 @@ export function PortalTopbar() {
           </div>
           <div className="text-xs text-muted-foreground">{session?.user?.email}</div>
         </div>
+        <LanguageSwitcher />
         <Button
           variant="ghost"
           size="icon"
           onClick={() => signOut({ callbackUrl: "/" })}
-          aria-label="Sign out"
+          aria-label={t("signOut")}
         >
           <LogOut className="size-4.5" />
         </Button>

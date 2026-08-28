@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { ReceiptText, Printer } from "lucide-react";
 import { money, periodLabel } from "@/lib/format";
 import type { Currency, Payslip } from "@/lib/types";
@@ -28,6 +29,8 @@ export function PortalPayslipDialog({
   currency: Currency;
   schoolName: string;
 }) {
+  const t = useTranslations("payslipPreview");
+  const locale = useLocale() as "en" | "fr";
   const [open, setOpen] = useState(false);
   const earnings = payslip.lines.filter((l) => l.category === "earning");
   const deductions = payslip.lines.filter((l) => l.category === "deduction");
@@ -37,7 +40,7 @@ export function PortalPayslipDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-thin sm:max-w-lg print:static print:max-h-none print:w-full print:max-w-none print:translate-x-0 print:translate-y-0 print:overflow-visible print:ring-0">
         <DialogHeader className="flex-row items-start justify-between">
-          <DialogTitle>Payslip — {periodLabel(payslip.period)}</DialogTitle>
+          <DialogTitle>{t("payslipFor", { period: periodLabel(payslip.period, locale) })}</DialogTitle>
           <Button
             variant="outline"
             size="sm"
@@ -45,7 +48,7 @@ export function PortalPayslipDialog({
             onClick={() => window.print()}
           >
             <Printer className="size-3.5" />
-            Print
+            {t("print")}
           </Button>
         </DialogHeader>
 
@@ -64,40 +67,40 @@ export function PortalPayslipDialog({
         <div className="mt-4 grid grid-cols-2 gap-6">
           <div>
             <div className="mb-2 text-xs font-semibold tracking-wide text-[oklch(0.42_0.09_70)] uppercase">
-              Earnings
+              {t("earnings")}
             </div>
             <div className="flex flex-col gap-2 text-sm">
               {earnings.map((l) => (
                 <div key={l.fieldId} className="flex items-center justify-between">
                   <span className="text-muted-foreground">{l.label}</span>
                   <span className="font-medium text-success">
-                    +{money(l.amount, currency)}
+                    +{money(l.amount, currency, locale)}
                   </span>
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border pt-2 font-semibold text-foreground">
-                <span>Gross Pay</span>
-                <span>{money(payslip.gross, currency)}</span>
+                <span>{t("grossPay")}</span>
+                <span>{money(payslip.gross, currency, locale)}</span>
               </div>
             </div>
           </div>
 
           <div>
             <div className="mb-2 text-xs font-semibold tracking-wide text-brand-clay uppercase">
-              Deductions
+              {t("deductions")}
             </div>
             <div className="flex flex-col gap-2 text-sm">
               {deductions.map((l) => (
                 <div key={l.fieldId} className="flex items-center justify-between">
                   <span className="text-muted-foreground">{l.label}</span>
                   <span className="font-medium text-destructive">
-                    −{money(l.amount, currency)}
+                    −{money(l.amount, currency, locale)}
                   </span>
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border pt-2 font-semibold text-destructive">
-                <span>Total Deductions</span>
-                <span>−{money(payslip.totalDeductions, currency)}</span>
+                <span>{t("totalDeductions")}</span>
+                <span>−{money(payslip.totalDeductions, currency, locale)}</span>
               </div>
             </div>
           </div>
@@ -105,16 +108,16 @@ export function PortalPayslipDialog({
 
         <div className="mt-4 flex items-center justify-between rounded-xl bg-primary px-5 py-4 text-primary-foreground">
           <div>
-            <div className="text-sm opacity-85">Net Payable</div>
+            <div className="text-sm opacity-85">{t("netPayable")}</div>
             <div className="font-heading text-2xl font-semibold">
-              {money(payslip.net, currency)}
+              {money(payslip.net, currency, locale)}
             </div>
           </div>
           <ReceiptText className="size-6 opacity-70" />
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          {schoolName} · {periodLabel(payslip.period)} payslip
+          {t("footerLine", { schoolName, period: periodLabel(payslip.period, locale) })}
         </p>
       </DialogContent>
     </Dialog>

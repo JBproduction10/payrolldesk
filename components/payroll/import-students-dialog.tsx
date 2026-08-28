@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Upload, FileDown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { csvToObjects } from "@/lib/csv";
@@ -39,44 +40,45 @@ function parseCycle(value: string | undefined): Cycle {
   return (VALID_CYCLES as string[]).includes(v ?? "") ? (v as Cycle) : "primaire";
 }
 
-function parseRows(text: string): ParsedRow[] {
-  const rows = csvToObjects(text);
-  return rows.map((row, i) => {
-    const line = i + 2; // +1 for header row, +1 for 1-indexing
-    const name = row.name?.trim();
-    const className = row.classname?.trim() || row.class?.trim();
-    const feeRaw = row.monthlyfee?.trim();
-
-    if (!name) return { ok: false, line, reason: "Missing name" };
-    if (!className) return { ok: false, line, reason: "Missing class" };
-    const monthlyFee = Number(feeRaw);
-    if (!feeRaw || Number.isNaN(monthlyFee) || monthlyFee <= 0) {
-      return { ok: false, line, reason: `Invalid monthly fee "${feeRaw ?? ""}"` };
-    }
-
-    return {
-      ok: true,
-      student: {
-        name,
-        cycle: parseCycle(row.cycle),
-        className,
-        guardianContact: row.guardiancontact?.trim() || "",
-        guardianEmail: row.guardianemail?.trim() || "",
-        monthlyFee,
-        status: parseStatus(row.status ?? ""),
-        joinDate: row.joindate?.trim() || new Date().toISOString().slice(0, 10),
-        note: "",
-      },
-    };
-  });
-}
-
 export function ImportStudentsDialog() {
+  const t = useTranslations("importDialog");
   const { addStudentsBulk } = usePayroll();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<ParsedRow[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function parseRows(csvText: string): ParsedRow[] {
+    const rows = csvToObjects(csvText);
+    return rows.map((row, i) => {
+      const line = i + 2; // +1 for header row, +1 for 1-indexing
+      const name = row.name?.trim();
+      const className = row.classname?.trim() || row.class?.trim();
+      const feeRaw = row.monthlyfee?.trim();
+
+      if (!name) return { ok: false, line, reason: t("errorMissingName") };
+      if (!className) return { ok: false, line, reason: t("errorMissingClass") };
+      const monthlyFee = Number(feeRaw);
+      if (!feeRaw || Number.isNaN(monthlyFee) || monthlyFee <= 0) {
+        return { ok: false, line, reason: t("errorInvalidFee", { value: feeRaw ?? "" }) };
+      }
+
+      return {
+        ok: true,
+        student: {
+          name,
+          cycle: parseCycle(row.cycle),
+          className,
+          guardianContact: row.guardiancontact?.trim() || "",
+          guardianEmail: row.guardianemail?.trim() || "",
+          monthlyFee,
+          status: parseStatus(row.status ?? ""),
+          joinDate: row.joindate?.trim() || new Date().toISOString().slice(0, 10),
+          note: "",
+        },
+      };
+    });
+  }
 
   const valid = parsed?.filter((r): r is Extract<ParsedRow, { ok: true }> => r.ok) ?? [];
   const invalid = parsed?.filter((r): r is Extract<ParsedRow, { ok: false }> => !r.ok) ?? [];
@@ -111,8 +113,8 @@ export function ImportStudentsDialog() {
     if (valid.length === 0) return;
     const count = addStudentsBulk(valid.map((r) => r.student));
     toast.add({
-      title: `Imported ${count} student${count === 1 ? "" : "s"}`,
-      description: invalid.length > 0 ? `${invalid.length} row(s) skipped` : undefined,
+      title: count === 1 ? t("importedStudentToast", { count }) : t("importedStudentToastOther", { count }),
+      description: invalid.length > 0 ? t("rowsSkippedDescription", { count: invalid.length }) : undefined,
       type: "success",
     });
     setOpen(false);
@@ -131,17 +133,15 @@ export function ImportStudentsDialog() {
         render={
           <Button variant="outline">
             <Upload className="size-4" />
-            Import CSV
+            {t("importCsv")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Import students from CSV</DialogTitle>
+          <DialogTitle>{t("studentsTitle")}</DialogTitle>
           <DialogDescription>
-            Columns: <code>name, className, monthlyFee</code> are required —{" "}
-            <code>cycle, guardianContact, guardianEmail, joinDate, status</code> are optional
-            (cycle defaults to "primaire" if left out).
+            {t("studentsColumnsInfo")}
           </DialogDescription>
         </DialogHeader>
 
@@ -154,11 +154,11 @@ export function ImportStudentsDialog() {
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="size-3.5" />
-              Choose CSV file
+              {t("chooseFile")}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={downloadTemplate}>
               <FileDown className="size-3.5" />
-              Download template
+              {t("downloadTemplate")}
             </Button>
             <input
               ref={fileInputRef}
@@ -176,7 +176,7 @@ export function ImportStudentsDialog() {
           <Textarea
             value={text}
             onChange={(e) => handleParse(e.target.value)}
-            placeholder="Or paste CSV content here (e.g. copied from Excel or Google Sheets)…"
+            placeholder={t("pastePlaceholder")}
             className="h-32 font-mono text-xs"
           />
 
@@ -184,18 +184,22 @@ export function ImportStudentsDialog() {
             <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
               <div className="flex items-center gap-1.5 text-success">
                 <CheckCircle2 className="size-4" />
-                {valid.length} row{valid.length === 1 ? "" : "s"} ready to import
+                {valid.length === 1
+                  ? t("rowsReady", { count: valid.length })
+                  : t("rowsReadyOther", { count: valid.length })}
               </div>
               {invalid.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center gap-1.5 text-brand-clay">
                     <AlertTriangle className="size-4" />
-                    {invalid.length} row{invalid.length === 1 ? "" : "s"} skipped
+                    {invalid.length === 1
+                      ? t("rowsSkipped", { count: invalid.length })
+                      : t("rowsSkippedOther", { count: invalid.length })}
                   </div>
                   <ul className="mt-1 max-h-24 overflow-y-auto scrollbar-thin pl-6 text-xs text-muted-foreground">
                     {invalid.map((r, i) => (
                       <li key={i} className="list-disc">
-                        Row {r.line}: {r.reason}
+                        {t("rowError", { line: r.line, reason: r.reason })}
                       </li>
                     ))}
                   </ul>
@@ -207,10 +211,12 @@ export function ImportStudentsDialog() {
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleImport} disabled={valid.length === 0}>
-            Import {valid.length || ""} Student{valid.length === 1 ? "" : "s"}
+            {valid.length === 1
+              ? t("importStudentOne", { count: valid.length })
+              : t("importStudentOther", { count: valid.length })}
           </Button>
         </DialogFooter>
       </DialogContent>

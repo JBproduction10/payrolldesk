@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Upload, FileDown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { csvToObjects } from "@/lib/csv";
@@ -34,6 +35,7 @@ function parseStatus(value: string): EmployeeStatus {
 }
 
 export function ImportEmployeesDialog() {
+  const t = useTranslations("importDialog");
   const { activeClient, clientDepartments, addEmployeesBulk } = usePayroll();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -50,9 +52,9 @@ export function ImportEmployeesDialog() {
       const position = row.position?.trim();
       const salaryRaw = row.basesalary?.trim();
 
-      if (!name) return { ok: false, line, reason: "Missing name" };
-      if (!email) return { ok: false, line, reason: "Missing email" };
-      if (!position) return { ok: false, line, reason: "Missing position" };
+      if (!name) return { ok: false, line, reason: t("errorMissingName") };
+      if (!email) return { ok: false, line, reason: t("errorMissingEmail") };
+      if (!position) return { ok: false, line, reason: t("errorMissingPosition") };
 
       const department = clientDepartments.find(
         (d) => d.name.toLowerCase() === deptName?.toLowerCase(),
@@ -62,13 +64,13 @@ export function ImportEmployeesDialog() {
         return {
           ok: false,
           line,
-          reason: `Unknown department "${deptName ?? ""}" — available: ${available}`,
+          reason: t("errorUnknownDepartment", { name: deptName ?? "", available }),
         };
       }
 
       const baseSalary = Number(salaryRaw);
       if (!salaryRaw || Number.isNaN(baseSalary) || baseSalary <= 0) {
-        return { ok: false, line, reason: `Invalid base salary "${salaryRaw ?? ""}"` };
+        return { ok: false, line, reason: t("errorInvalidSalary", { value: salaryRaw ?? "" }) };
       }
 
       const phone = row.phone?.trim() || "";
@@ -125,8 +127,8 @@ export function ImportEmployeesDialog() {
     if (valid.length === 0) return;
     const count = addEmployeesBulk(valid.map((r) => r.employee));
     toast.add({
-      title: `Imported ${count} employee${count === 1 ? "" : "s"}`,
-      description: invalid.length > 0 ? `${invalid.length} row(s) skipped` : undefined,
+      title: count === 1 ? t("importedToast", { count }) : t("importedToastOther", { count }),
+      description: invalid.length > 0 ? t("rowsSkippedDescription", { count: invalid.length }) : undefined,
       type: "success",
     });
     setOpen(false);
@@ -145,17 +147,15 @@ export function ImportEmployeesDialog() {
         render={
           <Button variant="outline">
             <Upload className="size-4" />
-            Import CSV
+            {t("importCsv")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Import employees from CSV</DialogTitle>
+          <DialogTitle>{t("employeesTitle")}</DialogTitle>
           <DialogDescription>
-            Columns: <code>name, email, department, position, baseSalary</code> are
-            required — <code>phone, joinDate, status</code> are optional. Department
-            must match an existing department name exactly (case-insensitive).
+            {t("employeesColumnsInfo")}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,11 +168,11 @@ export function ImportEmployeesDialog() {
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="size-3.5" />
-              Choose CSV file
+              {t("chooseFile")}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={downloadTemplate}>
               <FileDown className="size-3.5" />
-              Download template
+              {t("downloadTemplate")}
             </Button>
             <input
               ref={fileInputRef}
@@ -190,7 +190,7 @@ export function ImportEmployeesDialog() {
           <Textarea
             value={text}
             onChange={(e) => handleParse(e.target.value)}
-            placeholder="Or paste CSV content here (e.g. copied from Excel or Google Sheets)…"
+            placeholder={t("pastePlaceholder")}
             className="h-32 font-mono text-xs"
           />
 
@@ -198,18 +198,22 @@ export function ImportEmployeesDialog() {
             <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
               <div className="flex items-center gap-1.5 text-success">
                 <CheckCircle2 className="size-4" />
-                {valid.length} row{valid.length === 1 ? "" : "s"} ready to import
+                {valid.length === 1
+                  ? t("rowsReady", { count: valid.length })
+                  : t("rowsReadyOther", { count: valid.length })}
               </div>
               {invalid.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center gap-1.5 text-brand-clay">
                     <AlertTriangle className="size-4" />
-                    {invalid.length} row{invalid.length === 1 ? "" : "s"} skipped
+                    {invalid.length === 1
+                      ? t("rowsSkipped", { count: invalid.length })
+                      : t("rowsSkippedOther", { count: invalid.length })}
                   </div>
                   <ul className="mt-1 max-h-24 overflow-y-auto scrollbar-thin pl-6 text-xs text-muted-foreground">
                     {invalid.map((r, i) => (
                       <li key={i} className="list-disc">
-                        Row {r.line}: {r.reason}
+                        {t("rowError", { line: r.line, reason: r.reason })}
                       </li>
                     ))}
                   </ul>
@@ -221,10 +225,12 @@ export function ImportEmployeesDialog() {
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleImport} disabled={valid.length === 0}>
-            Import {valid.length || ""} Employee{valid.length === 1 ? "" : "s"}
+            {valid.length === 1
+              ? t("importOne", { count: valid.length })
+              : t("importOther", { count: valid.length })}
           </Button>
         </DialogFooter>
       </DialogContent>
