@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import { useTranslations } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { Cycle, Student, StudentStatus } from "@/lib/types";
 import { CYCLES, CYCLE_CLASSES } from "@/lib/academic";
@@ -46,6 +47,7 @@ export function StudentFormDialog({
   trigger: ReactElement;
   student?: Student;
 }) {
+  const t = useTranslations("studentForm");
   const { activeClient, addStudent, updateStudent } = usePayroll();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -82,7 +84,7 @@ export function StudentFormDialog({
         joinDate: form.joinDate,
         status: form.status,
       });
-      toast.add({ title: `Updated ${form.name.trim()}`, type: "success" });
+      toast.add({ title: t("updatedToast", { name: form.name.trim() }), type: "success" });
     } else {
       addStudent({
         name: form.name.trim(),
@@ -94,7 +96,7 @@ export function StudentFormDialog({
         status: form.status,
         note: "",
       });
-      toast.add({ title: `Added ${form.name.trim()}`, type: "success" });
+      toast.add({ title: t("addedToast", { name: form.name.trim() }), type: "success" });
     }
     setOpen(false);
   }
@@ -104,27 +106,27 @@ export function StudentFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Student" : "Add Student"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this student's enrollment details."
-              : `Enroll a new student at ${activeClient.name}.`}
+              ? t("editDescription")
+              : t("addDescription", { schoolName: activeClient.name })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="sf-name">Full name *</Label>
+            <Label htmlFor="sf-name">{t("fullName")}</Label>
             <Input
               id="sf-name"
-              placeholder="e.g. Kwame Asante"
+              placeholder={t("fullNamePlaceholder")}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sf-cycle">Cycle *</Label>
+            <Label htmlFor="sf-cycle">{t("cycle")}</Label>
             <NativeSelect
               id="sf-cycle"
               className="w-full"
@@ -145,7 +147,7 @@ export function StudentFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sf-class">Classe *</Label>
+            <Label htmlFor="sf-class">{t("class")}</Label>
             <NativeSelect
               id="sf-class"
               className="w-full"
@@ -153,7 +155,7 @@ export function StudentFormDialog({
               onChange={(e) => setForm((f) => ({ ...f, className: e.target.value }))}
             >
               <NativeSelectOption value="" disabled>
-                Select a class…
+                {t("selectClass")}
               </NativeSelectOption>
               {CYCLE_CLASSES[form.cycle].map((cls) => (
                 <NativeSelectOption key={cls} value={cls}>
@@ -165,20 +167,20 @@ export function StudentFormDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="sf-fee">
-              Monthly fee ({activeClient.currency}) *
+              {t("monthlyFee", { currency: activeClient.currency })}
             </Label>
             <Input
               id="sf-fee"
               type="number"
               min={0}
-              placeholder="e.g. 100"
+              placeholder={t("monthlyFeePlaceholder")}
               value={form.monthlyFee}
               onChange={(e) => setForm((f) => ({ ...f, monthlyFee: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sf-contact">Guardian contact</Label>
+            <Label htmlFor="sf-contact">{t("guardianContact")}</Label>
             <Input
               id="sf-contact"
               placeholder="+233 24 000 0000"
@@ -188,7 +190,7 @@ export function StudentFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sf-join">Join date</Label>
+            <Label htmlFor="sf-join">{t("joinDate")}</Label>
             <Input
               id="sf-join"
               type="date"
@@ -198,7 +200,7 @@ export function StudentFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="sf-status">Status</Label>
+            <Label htmlFor="sf-status">{t("status")}</Label>
             <NativeSelect
               id="sf-status"
               className="w-full"
@@ -207,18 +209,18 @@ export function StudentFormDialog({
                 setForm((f) => ({ ...f, status: e.target.value as StudentStatus }))
               }
             >
-              <NativeSelectOption value="active">Active</NativeSelectOption>
-              <NativeSelectOption value="withdrawn">Withdrawn</NativeSelectOption>
+              <NativeSelectOption value="active">{t("statusActive")}</NativeSelectOption>
+              <NativeSelectOption value="withdrawn">{t("statusWithdrawn")}</NativeSelectOption>
             </NativeSelect>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid}>
-            {isEdit ? "Save Changes" : "Add Student"}
+            {isEdit ? t("saveChanges") : t("addStudent")}
           </Button>
         </DialogFooter>
       </DialogContent>

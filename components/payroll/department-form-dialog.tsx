@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import { useTranslations } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { Department } from "@/lib/types";
 import type { BrandColorKey } from "@/lib/colors";
@@ -36,6 +37,7 @@ export function DepartmentFormDialog({
   trigger: ReactElement;
   department?: Department;
 }) {
+  const t = useTranslations("departmentForm");
   const { activeClient, clientEmployees, addDepartment, updateDepartment } =
     usePayroll();
   const [open, setOpen] = useState(false);
@@ -71,7 +73,7 @@ export function DepartmentFormDialog({
         headId: form.headId || null,
         color: form.color,
       });
-      toast.add({ title: `Updated ${form.name.trim()}`, type: "success" });
+      toast.add({ title: t("updatedToast", { name: form.name.trim() }), type: "success" });
     } else {
       addDepartment({
         name: form.name.trim(),
@@ -79,7 +81,7 @@ export function DepartmentFormDialog({
         headId: form.headId || null,
         color: form.color,
       });
-      toast.add({ title: `Created ${form.name.trim()}`, type: "success" });
+      toast.add({ title: t("createdToast", { name: form.name.trim() }), type: "success" });
     }
     setOpen(false);
   }
@@ -89,44 +91,44 @@ export function DepartmentFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Department" : "Add Department"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this department's details."
-              : `Create a new department for ${activeClient.name}.`}
+              ? t("editDescription")
+              : t("addDescription", { schoolName: activeClient.name })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="df-name">Department name *</Label>
+            <Label htmlFor="df-name">{t("name")}</Label>
             <Input
               id="df-name"
-              placeholder="e.g. Engineering"
+              placeholder={t("namePlaceholder")}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="df-desc">Description</Label>
+            <Label htmlFor="df-desc">{t("description")}</Label>
             <Input
               id="df-desc"
-              placeholder="What this team does"
+              placeholder={t("descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="df-head">Department head</Label>
+            <Label htmlFor="df-head">{t("head")}</Label>
             <NativeSelect
               id="df-head"
               className="w-full"
               value={form.headId}
               onChange={(e) => setForm((f) => ({ ...f, headId: e.target.value }))}
             >
-              <NativeSelectOption value="">No head assigned</NativeSelectOption>
+              <NativeSelectOption value="">{t("noHead")}</NativeSelectOption>
               {membersOfDept.map((e) => (
                 <NativeSelectOption key={e.id} value={e.id}>
                   {e.name}
@@ -136,7 +138,7 @@ export function DepartmentFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Colour</Label>
+            <Label>{t("colour")}</Label>
             <ColorSwatchPicker
               value={form.color}
               onChange={(c) => setForm((f) => ({ ...f, color: c }))}
@@ -146,10 +148,10 @@ export function DepartmentFormDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid}>
-            {isEdit ? "Save Changes" : "Add Department"}
+            {isEdit ? t("saveChanges") : t("addDepartment")}
           </Button>
         </DialogFooter>
       </DialogContent>

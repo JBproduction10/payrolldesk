@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import { useTranslations } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { FieldCategory, FieldType, PayField } from "@/lib/types";
 import { toast } from "@/components/ui/toast";
@@ -40,10 +41,10 @@ const EMPTY: FormState = {
   departmentIds: [],
 };
 
-const CATEGORY_OPTIONS: { value: FieldCategory; label: string }[] = [
-  { value: "earning", label: "Earning (+)" },
-  { value: "deduction", label: "Deduction (−)" },
-  { value: "info", label: "Info" },
+const CATEGORY_KEYS: { value: FieldCategory; labelKey: string }[] = [
+  { value: "earning", labelKey: "categoryEarning" },
+  { value: "deduction", labelKey: "categoryDeduction" },
+  { value: "info", labelKey: "categoryInfo" },
 ];
 
 export function FieldFormDialog({
@@ -55,6 +56,7 @@ export function FieldFormDialog({
   field?: PayField;
   defaultCategory?: FieldCategory;
 }) {
+  const t = useTranslations("fieldForm");
   const { clientDepartments, addField, updateField } = usePayroll();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -98,10 +100,10 @@ export function FieldFormDialog({
 
     if (isEdit && field) {
       updateField(field.id, payload);
-      toast.add({ title: `Updated ${payload.label}`, type: "success" });
+      toast.add({ title: t("updatedToast", { label: payload.label }), type: "success" });
     } else {
       addField(payload);
-      toast.add({ title: `Added ${payload.label}`, type: "success" });
+      toast.add({ title: t("addedToast", { label: payload.label }), type: "success" });
     }
     setOpen(false);
   }
@@ -120,20 +122,20 @@ export function FieldFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Field" : "Add Field"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update how this field is calculated."
-              : "Define a new field that appears on every payslip."}
+              ? t("editDescription")
+              : t("addDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ff-label">Field label *</Label>
+            <Label htmlFor="ff-label">{t("fieldLabel")}</Label>
             <Input
               id="ff-label"
-              placeholder="e.g. Overtime Pay"
+              placeholder={t("fieldLabelPlaceholder")}
               value={form.label}
               onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
             />
@@ -141,7 +143,7 @@ export function FieldFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ff-category">Category</Label>
+              <Label htmlFor="ff-category">{t("category")}</Label>
               <NativeSelect
                 id="ff-category"
                 className="w-full"
@@ -155,19 +157,19 @@ export function FieldFormDialog({
                   }));
                 }}
               >
-                {CATEGORY_OPTIONS.map((o) => (
+                {CATEGORY_KEYS.map((o) => (
                   <NativeSelectOption key={o.value} value={o.value}>
-                    {o.label}
+                    {t(o.labelKey)}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ff-type">Type</Label>
+              <Label htmlFor="ff-type">{t("type")}</Label>
               {form.category === "info" ? (
                 <NativeSelect id="ff-type" value="text" disabled className="w-full">
-                  <NativeSelectOption value="text">Text</NativeSelectOption>
+                  <NativeSelectOption value="text">{t("typeText")}</NativeSelectOption>
                 </NativeSelect>
               ) : (
                 <NativeSelect
@@ -176,10 +178,10 @@ export function FieldFormDialog({
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as FieldType }))}
                 >
-                  <NativeSelectOption value="fixed">Fixed amount</NativeSelectOption>
-                  <NativeSelectOption value="percent">Percentage (%)</NativeSelectOption>
+                  <NativeSelectOption value="fixed">{t("typeFixed")}</NativeSelectOption>
+                  <NativeSelectOption value="percent">{t("typePercent")}</NativeSelectOption>
                   <NativeSelectOption value="perEmployee">
-                    Per employee (entered individually)
+                    {t("typePerEmployee")}
                   </NativeSelectOption>
                 </NativeSelect>
               )}
@@ -188,12 +190,12 @@ export function FieldFormDialog({
 
           {form.category !== "info" && form.type === "fixed" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ff-amount">Amount (USD)</Label>
+              <Label htmlFor="ff-amount">{t("amount")}</Label>
               <Input
                 id="ff-amount"
                 type="number"
                 min={0}
-                placeholder="e.g. 500"
+                placeholder={t("amountPlaceholder")}
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               />
@@ -202,35 +204,34 @@ export function FieldFormDialog({
 
           {form.category !== "info" && form.type === "percent" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ff-percent">Percent (%)</Label>
+              <Label htmlFor="ff-percent">{t("percent")}</Label>
               <Input
                 id="ff-percent"
                 type="number"
                 min={0}
                 max={100}
-                placeholder="e.g. 5"
+                placeholder={t("percentPlaceholder")}
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
-                {form.category === "earning" ? "% of base salary" : "% of gross pay"}
+                {form.category === "earning" ? t("percentOfBase") : t("percentOfGross")}
               </p>
             </div>
           )}
 
           {form.category !== "info" && form.type === "perEmployee" && (
             <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-              This amount is entered individually on each employee record instead of a
-              shared value.
+              {t("perEmployeeHint")}
             </p>
           )}
 
           {form.category === "info" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ff-text">Default value</Label>
+              <Label htmlFor="ff-text">{t("defaultValue")}</Label>
               <Input
                 id="ff-text"
-                placeholder="e.g. •••• 0000"
+                placeholder={t("defaultValuePlaceholder")}
                 value={form.textValue}
                 onChange={(e) => setForm((f) => ({ ...f, textValue: e.target.value }))}
               />
@@ -239,7 +240,7 @@ export function FieldFormDialog({
 
           {clientDepartments.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <Label>Applies to</Label>
+              <Label>{t("appliesTo")}</Label>
               <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
@@ -251,7 +252,7 @@ export function FieldFormDialog({
                       : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  All departments
+                  {t("allDepartments")}
                 </button>
                 {clientDepartments.map((d) => (
                   <button
@@ -277,16 +278,16 @@ export function FieldFormDialog({
               checked={form.required}
               onCheckedChange={(v) => setForm((f) => ({ ...f, required: v === true }))}
             />
-            Required field
+            {t("requiredField")}
           </label>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid}>
-            Save Field
+            {t("saveField")}
           </Button>
         </DialogFooter>
       </DialogContent>

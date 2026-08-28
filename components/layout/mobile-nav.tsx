@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +26,7 @@ export function MobileNav({
   onOpenChange: (open: boolean) => void;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("nav");
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
@@ -42,7 +44,7 @@ export function MobileNav({
         )}
       >
         <Icon className="size-4 shrink-0" />
-        {item.label}
+        {t(item.labelKey)}
       </Link>
     );
   };
@@ -61,13 +63,13 @@ export function MobileNav({
         <nav className="flex flex-col gap-6 px-3 py-4">
           <div>
             <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-              Manage
+              {t("manageSection")}
             </div>
             <div className="flex flex-col gap-0.5">{MANAGE_NAV.map(renderItem)}</div>
           </div>
           <div>
             <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-              Payroll
+              {t("payrollSection")}
             </div>
             <div className="flex flex-col gap-0.5">{PAYROLL_NAV.map(renderItem)}</div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,7 +11,7 @@ export function TablePagination({
   to,
   total,
   onPageChange,
-  itemLabel = "rows",
+  itemLabel,
 }: {
   page: number;
   pageCount: number;
@@ -20,14 +21,18 @@ export function TablePagination({
   onPageChange: (page: number) => void;
   itemLabel?: string;
 }) {
+  const t = useTranslations("pagination");
   if (total === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
       <p className="text-xs text-muted-foreground">
-        Showing <span className="font-medium text-foreground">{from}</span>–
-        <span className="font-medium text-foreground">{to}</span> of{" "}
-        <span className="font-medium text-foreground">{total}</span> {itemLabel}
+        {t("showingPrefix")}{" "}
+        <span className="font-medium text-foreground">{from}</span>–
+        <span className="font-medium text-foreground">{to}</span>{" "}
+        {t("showingOf")}{" "}
+        <span className="font-medium text-foreground">{total}</span>{" "}
+        {itemLabel ?? t("rows")}
       </p>
       <div className="flex items-center gap-2">
         <Button
@@ -37,10 +42,10 @@ export function TablePagination({
           onClick={() => onPageChange(page - 1)}
         >
           <ChevronLeft data-icon="inline-start" />
-          Previous
+          {t("previous")}
         </Button>
         <span className="text-xs text-muted-foreground">
-          Page {page} of {pageCount}
+          {t("pageOf", { page, pageCount })}
         </span>
         <Button
           variant="outline"
@@ -48,7 +53,7 @@ export function TablePagination({
           disabled={page >= pageCount}
           onClick={() => onPageChange(page + 1)}
         >
-          Next
+          {t("next")}
           <ChevronRight data-icon="inline-end" />
         </Button>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Clock, CheckCircle2, ReceiptText, Printer } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import type { Employee, Payslip } from "@/lib/types";
@@ -33,6 +34,8 @@ export function PayslipPreviewDialog({
   departmentName: string;
   avatarIndex?: number;
 }) {
+  const t = useTranslations("payslipPreview");
+  const locale = useLocale() as "en" | "fr";
   const { activeClient, clientFields, setDelivery } = usePayroll();
   const [open, setOpen] = useState(false);
 
@@ -61,7 +64,7 @@ export function PayslipPreviewDialog({
     for (const ch of Object.keys(payslip.delivery) as Array<keyof Payslip["delivery"]>) {
       setDelivery(payslip.id, ch as "email" | "whatsapp", "sent");
     }
-    toast.add({ title: `Marked ${employee.name}'s payslip as sent`, type: "success" });
+    toast.add({ title: t("markedSentToast", { name: employee.name }), type: "success" });
     setOpen(false);
   }
 
@@ -70,7 +73,7 @@ export function PayslipPreviewDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-thin sm:max-w-lg print:static print:max-h-none print:w-full print:max-w-none print:translate-x-0 print:translate-y-0 print:overflow-visible print:ring-0">
         <DialogHeader className="flex-row items-start justify-between">
-          <DialogTitle>Payslip Preview</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <Button
             variant="outline"
             size="sm"
@@ -78,7 +81,7 @@ export function PayslipPreviewDialog({
             onClick={() => window.print()}
           >
             <Printer className="size-3.5" />
-            Print
+            {t("print")}
           </Button>
         </DialogHeader>
 
@@ -92,7 +95,7 @@ export function PayslipPreviewDialog({
                 {activeClient.name}
               </div>
               <div className="text-xs text-muted-foreground">
-                Payslip · {periodLabel(period)}
+                {t("payslipFor", { period: periodLabel(period, locale) })}
               </div>
             </div>
           </div>
@@ -107,7 +110,7 @@ export function PayslipPreviewDialog({
                   : "bg-success/12 text-success"
               }`}
             >
-              {isDraft ? "Draft" : "Sent"}
+              {isDraft ? t("draft") : t("sent")}
             </span>
           </div>
         </div>
@@ -123,7 +126,7 @@ export function PayslipPreviewDialog({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-muted-foreground">Employee ID</div>
+            <div className="text-xs text-muted-foreground">{t("employeeId")}</div>
             <div className="text-sm font-medium text-foreground">{employee.code}</div>
           </div>
         </div>
@@ -131,40 +134,40 @@ export function PayslipPreviewDialog({
         <div className="mt-4 grid grid-cols-2 gap-6">
           <div>
             <div className="mb-2 text-xs font-semibold tracking-wide text-[oklch(0.42_0.09_70)] uppercase">
-              Earnings
+              {t("earnings")}
             </div>
             <div className="flex flex-col gap-2 text-sm">
               {computed.earnings.map((l) => (
                 <div key={l.fieldId} className="flex items-center justify-between">
                   <span className="text-muted-foreground">{l.label}</span>
                   <span className="font-medium text-success">
-                    +{money(l.amount, activeClient.currency)}
+                    +{money(l.amount, activeClient.currency, locale)}
                   </span>
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border pt-2 font-semibold text-foreground">
-                <span>Gross Pay</span>
-                <span>{money(computed.gross, activeClient.currency)}</span>
+                <span>{t("grossPay")}</span>
+                <span>{money(computed.gross, activeClient.currency, locale)}</span>
               </div>
             </div>
           </div>
 
           <div>
             <div className="mb-2 text-xs font-semibold tracking-wide text-brand-clay uppercase">
-              Deductions
+              {t("deductions")}
             </div>
             <div className="flex flex-col gap-2 text-sm">
               {computed.deductions.map((l) => (
                 <div key={l.fieldId} className="flex items-center justify-between">
                   <span className="text-muted-foreground">{l.label}</span>
                   <span className="font-medium text-destructive">
-                    −{money(l.amount, activeClient.currency)}
+                    −{money(l.amount, activeClient.currency, locale)}
                   </span>
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border pt-2 font-semibold text-destructive">
-                <span>Total Deductions</span>
-                <span>−{money(computed.totalDeductions, activeClient.currency)}</span>
+                <span>{t("totalDeductions")}</span>
+                <span>−{money(computed.totalDeductions, activeClient.currency, locale)}</span>
               </div>
             </div>
           </div>
@@ -172,9 +175,9 @@ export function PayslipPreviewDialog({
 
         <div className="mt-4 flex items-center justify-between rounded-xl bg-primary px-5 py-4 text-primary-foreground">
           <div>
-            <div className="text-sm opacity-85">Net Payable</div>
+            <div className="text-sm opacity-85">{t("netPayable")}</div>
             <div className="font-heading text-2xl font-semibold">
-              {money(computed.net, activeClient.currency)}
+              {money(computed.net, activeClient.currency, locale)}
             </div>
           </div>
           <ReceiptText className="size-6 opacity-70" />
@@ -183,7 +186,7 @@ export function PayslipPreviewDialog({
         {computed.info.length > 0 && (
           <div className="mt-4">
             <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              Employee Information
+              {t("employeeInformation")}
             </div>
             <div className="grid grid-cols-2 gap-3">
               {computed.info.map((l) => (
@@ -197,7 +200,7 @@ export function PayslipPreviewDialog({
         )}
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          {activeClient.name} · {periodLabel(period)} payslip
+          {t("footerLine", { schoolName: activeClient.name, period: periodLabel(period, locale) })}
         </p>
 
         <div className="mt-2 flex items-center justify-between border-t border-border pt-4 print:hidden">
@@ -205,18 +208,18 @@ export function PayslipPreviewDialog({
             {isDraft ? (
               <>
                 <Clock className="size-4" />
-                This payslip is still a draft
+                {t("stillDraft")}
               </>
             ) : (
               <>
                 <CheckCircle2 className="size-4 text-success" />
-                Delivered {sentAt ? formatDate(sentAt) : ""}
+                {t("delivered", { date: sentAt ? formatDate(sentAt, locale) : "" })}
               </>
             )}
           </div>
           {payslip && isDraft && (
             <Button size="sm" onClick={markSent}>
-              Mark as Sent
+              {t("markAsSent")}
             </Button>
           )}
         </div>

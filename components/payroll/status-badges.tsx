@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type {
   EmployeeStatus,
@@ -13,13 +16,14 @@ const EMPLOYEE_TONE: Record<EmployeeStatus, string> = {
   inactive: "bg-muted text-muted-foreground",
 };
 
-const EMPLOYEE_LABEL: Record<EmployeeStatus, string> = {
-  active: "Active",
-  leave: "On Leave",
-  inactive: "Inactive",
+const EMPLOYEE_LABEL_KEY: Record<EmployeeStatus, string> = {
+  active: "employeeActive",
+  leave: "employeeLeave",
+  inactive: "employeeInactive",
 };
 
 export function EmployeeStatusBadge({ status }: { status: EmployeeStatus }) {
+  const t = useTranslations("statusBadges");
   return (
     <span
       className={cn(
@@ -27,7 +31,7 @@ export function EmployeeStatusBadge({ status }: { status: EmployeeStatus }) {
         EMPLOYEE_TONE[status],
       )}
     >
-      {EMPLOYEE_LABEL[status]}
+      {t(EMPLOYEE_LABEL_KEY[status])}
     </span>
   );
 }
@@ -39,14 +43,15 @@ const PAYSLIP_TONE: Record<PayslipStatus, string> = {
   failed: "bg-destructive/10 text-destructive",
 };
 
-const PAYSLIP_LABEL: Record<PayslipStatus, string> = {
-  draft: "Draft",
-  sent: "Sent",
-  partial: "Partial",
-  failed: "Failed",
+const PAYSLIP_LABEL_KEY: Record<PayslipStatus, string> = {
+  draft: "payslipDraft",
+  sent: "payslipSent",
+  partial: "payslipPartial",
+  failed: "payslipFailed",
 };
 
 export function PayslipStatusBadge({ status }: { status: PayslipStatus }) {
+  const t = useTranslations("statusBadges");
   return (
     <span
       className={cn(
@@ -54,7 +59,7 @@ export function PayslipStatusBadge({ status }: { status: PayslipStatus }) {
         PAYSLIP_TONE[status],
       )}
     >
-      {PAYSLIP_LABEL[status]}
+      {t(PAYSLIP_LABEL_KEY[status])}
     </span>
   );
 }
@@ -67,15 +72,16 @@ const DELIVERY_TONE: Record<DeliveryState, string> = {
   failed: "bg-destructive/10 text-destructive",
 };
 
-const DELIVERY_LABEL: Record<DeliveryState, string> = {
-  pending: "Pending",
-  queued: "Queued",
-  sending: "Sending…",
-  sent: "Sent",
-  failed: "Failed",
+const DELIVERY_LABEL_KEY: Record<DeliveryState, string> = {
+  pending: "deliveryPending",
+  queued: "deliveryQueued",
+  sending: "deliverySending",
+  sent: "deliverySent",
+  failed: "deliveryFailed",
 };
 
 export function DeliveryStateBadge({ state }: { state: DeliveryState }) {
+  const t = useTranslations("statusBadges");
   return (
     <span
       className={cn(
@@ -83,7 +89,7 @@ export function DeliveryStateBadge({ state }: { state: DeliveryState }) {
         DELIVERY_TONE[state],
       )}
     >
-      {DELIVERY_LABEL[state]}
+      {t(DELIVERY_LABEL_KEY[state])}
     </span>
   );
 }
@@ -95,14 +101,15 @@ const FEE_TONE: Record<FeeStatus, string> = {
   social_case: "bg-brand-pine-mid/15 text-brand-pine-mid",
 };
 
-const FEE_LABEL: Record<FeeStatus, string> = {
-  paid: "Paid",
-  partial: "Partial",
-  unpaid: "Unpaid",
-  social_case: "Social Case",
+const FEE_LABEL_KEY: Record<FeeStatus, string> = {
+  paid: "feePaid",
+  partial: "feePartial",
+  unpaid: "feeUnpaid",
+  social_case: "feeSocialCase",
 };
 
 export function FeeStatusBadge({ status }: { status: FeeStatus }) {
+  const t = useTranslations("statusBadges");
   return (
     <span
       className={cn(
@@ -110,7 +117,7 @@ export function FeeStatusBadge({ status }: { status: FeeStatus }) {
         FEE_TONE[status],
       )}
     >
-      {FEE_LABEL[status]}
+      {t(FEE_LABEL_KEY[status])}
     </span>
   );
 }
@@ -122,14 +129,15 @@ const REQUISITION_TONE: Record<RequisitionStatus, string> = {
   paid: "bg-success/12 text-success",
 };
 
-const REQUISITION_LABEL: Record<RequisitionStatus, string> = {
-  pending: "Pending",
-  approved: "Approved",
-  rejected: "Rejected",
-  paid: "Paid",
+const REQUISITION_LABEL_KEY: Record<RequisitionStatus, string> = {
+  pending: "requisitionPending",
+  approved: "requisitionApproved",
+  rejected: "requisitionRejected",
+  paid: "requisitionPaid",
 };
 
 export function RequisitionStatusBadge({ status }: { status: RequisitionStatus }) {
+  const t = useTranslations("statusBadges");
   return (
     <span
       className={cn(
@@ -137,7 +145,7 @@ export function RequisitionStatusBadge({ status }: { status: RequisitionStatus }
         REQUISITION_TONE[status],
       )}
     >
-      {REQUISITION_LABEL[status]}
+      {t(REQUISITION_LABEL_KEY[status])}
     </span>
   );
 }

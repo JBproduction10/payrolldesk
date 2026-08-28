@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Minus, Info, Trash2 } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import type { FieldCategory, PayField } from "@/lib/types";
@@ -9,17 +10,20 @@ import { FieldFormDialog } from "@/components/payroll/field-form-dialog";
 import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 
-function typeBadge(field: PayField): string {
-  switch (field.type) {
-    case "fixed":
-      return "Number";
-    case "percent":
-      return "Percentage";
-    case "perEmployee":
-      return "Per employee";
-    case "text":
-      return "Text";
-  }
+function useTypeBadge() {
+  const t = useTranslations("fieldDesignerPage");
+  return (field: PayField): string => {
+    switch (field.type) {
+      case "fixed":
+        return t("typeNumber");
+      case "percent":
+        return t("typePercentage");
+      case "perEmployee":
+        return t("typePerEmployee");
+      case "text":
+        return t("typeText");
+    }
+  };
 }
 
 function valueBadge(field: PayField): string {
@@ -44,6 +48,8 @@ function FieldColumn({
   category: FieldCategory;
   fields: PayField[];
 }) {
+  const t = useTranslations("fieldDesignerPage");
+  const typeBadge = useTypeBadge();
   const { removeField } = usePayroll();
   const visible = fields.filter((f) => !f.system);
 
@@ -65,7 +71,7 @@ function FieldColumn({
       <div className="flex flex-1 flex-col divide-y divide-border">
         {visible.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No fields yet.
+            {t("noFieldsYet")}
           </p>
         )}
         {visible.map((f) => (
@@ -78,7 +84,7 @@ function FieldColumn({
                     {f.label}
                     {f.required && (
                       <span className="ml-2 rounded-full bg-brand-gold/20 px-1.5 py-0.5 text-[10px] font-medium text-[oklch(0.42_0.09_70)]">
-                        Required
+                        {t("required")}
                       </span>
                     )}
                   </div>
@@ -92,8 +98,8 @@ function FieldColumn({
               }
             />
             <ConfirmDeleteDialog
-              title={`Remove ${f.label}?`}
-              description="This field will no longer appear on payslips."
+              title={t("removeConfirmTitle", { label: f.label })}
+              description={t("removeConfirmDescription")}
               onConfirm={() => removeField(f.id)}
               trigger={
                 <Button
@@ -114,7 +120,7 @@ function FieldColumn({
         trigger={
           <button className="mt-3 flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
             <Plus className="size-3.5" />
-            Add {category === "earning" ? "earning" : category === "deduction" ? "deduction" : "information"}
+            {category === "earning" ? t("addEarning") : category === "deduction" ? t("addDeduction") : t("addInformation")}
           </button>
         }
       />
@@ -123,6 +129,7 @@ function FieldColumn({
 }
 
 export default function FieldDesignerPage() {
+  const t = useTranslations("fieldDesignerPage");
   const { clientFields } = usePayroll();
 
   const earnings = clientFields.filter((f) => f.category === "earning");
@@ -132,14 +139,14 @@ export default function FieldDesignerPage() {
   return (
     <>
       <PageHeader
-        title="Field Designer"
-        description="Design exactly what appears on every payslip"
+        title={t("title")}
+        description={t("description")}
         action={
           <FieldFormDialog
             trigger={
               <Button>
                 <Plus className="size-4" />
-                Add Field
+                {t("addField")}
               </Button>
             }
           />
@@ -148,24 +155,24 @@ export default function FieldDesignerPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <FieldColumn
-          title="Earnings"
-          description="Amounts added to the base salary"
+          title={t("earningsTitle")}
+          description={t("earningsDescription")}
           icon={<Plus className="size-4.5" />}
           iconClassName="bg-success/12 text-success"
           category="earning"
           fields={earnings}
         />
         <FieldColumn
-          title="Deductions"
-          description="Amounts taken out of gross pay"
+          title={t("deductionsTitle")}
+          description={t("deductionsDescription")}
           icon={<Minus className="size-4.5" />}
           iconClassName="bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
           category="deduction"
           fields={deductions}
         />
         <FieldColumn
-          title="Information"
-          description="Details shown on each payslip"
+          title={t("infoTitle")}
+          description={t("infoDescription")}
           icon={<Info className="size-4.5" />}
           iconClassName="bg-secondary text-secondary-foreground"
           category="info"

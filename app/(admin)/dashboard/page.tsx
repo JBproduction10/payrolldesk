@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Users, Wallet, Building2, FileClock, Sparkles, ArrowUp, ArrowDown, GraduationCap, Receipt, AlertTriangle } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { money, recentPeriods } from "@/lib/format";
@@ -17,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboardPage");
+  const locale = useLocale() as "en" | "fr";
   const {
     activeClient,
     period,
@@ -69,8 +72,8 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        description={`Payroll overview for ${activeClient.name}`}
+        title={t("title")}
+        description={t("description", { schoolName: activeClient.name })}
         action={
           <div className="flex items-center gap-2">
             <PeriodSwitcher />
@@ -79,7 +82,7 @@ export default function DashboardPage() {
               trigger={
                 <Button>
                   <Sparkles className="size-4" />
-                  Generate Payslips
+                  {t("generatePayslips")}
                 </Button>
               }
             />
@@ -89,20 +92,20 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Total Employees"
+          label={t("totalEmployees")}
           value={clientEmployees.length}
           icon={<Users className="size-4.5" />}
           iconClassName="bg-brand-pine-mid/15 text-brand-pine-mid"
           trend={
             <>
-              <ArrowUp className="size-3.5" /> Active across {clientDepartments.length} depts
+              <ArrowUp className="size-3.5" /> {t("activeAcrossDepts", { count: clientDepartments.length })}
             </>
           }
           trendTone="up"
         />
         <StatCard
-          label="Monthly Payroll"
-          value={money(grossPayable, activeClient.currency)}
+          label={t("monthlyPayroll")}
+          value={money(grossPayable, activeClient.currency, locale)}
           icon={<Wallet className="size-4.5" />}
           iconClassName="bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
           trend={
@@ -112,24 +115,24 @@ export default function DashboardPage() {
               ) : (
                 <ArrowDown className="size-3.5" />
               )}
-              {Math.abs(payrollDelta).toFixed(1)}% vs last month
+              {t("vsLastMonth", { delta: Math.abs(payrollDelta).toFixed(1) })}
             </>
           }
           trendTone={payrollDelta >= 0 ? "up" : "down"}
         />
         <StatCard
-          label="Departments"
+          label={t("departments")}
           value={clientDepartments.length}
           icon={<Building2 className="size-4.5" />}
           iconClassName="bg-brand-olive/15 text-brand-olive"
-          trend={<span>Across {activeClient.name}</span>}
+          trend={<span>{t("across", { schoolName: activeClient.name })}</span>}
         />
         <StatCard
-          label="Payslips Pending"
+          label={t("payslipsPending")}
           value={Math.max(0, pending)}
           icon={<FileClock className="size-4.5" />}
           iconClassName="bg-brand-clay/15 text-brand-clay"
-          trend={<span>{sentThisPeriod} sent this period</span>}
+          trend={<span>{t("sentThisPeriod", { count: sentThisPeriod })}</span>}
         />
       </div>
 
@@ -137,45 +140,45 @@ export default function DashboardPage() {
         <div className="mt-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-heading text-base font-semibold text-foreground">
-              Students & Expenses
+              {t("studentsAndExpenses")}
             </h3>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" render={<Link href="/students" />} nativeButton={false}>
-                View students
+                {t("viewStudents")}
               </Button>
               <Button variant="outline" size="sm" render={<Link href="/expenses" />} nativeButton={false}>
-                View expenses
+                {t("viewExpenses")}
               </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label="Students"
+              label={t("students")}
               value={finance.studentCount}
               icon={<GraduationCap className="size-4.5" />}
               iconClassName="bg-brand-pine/12 text-brand-pine"
-              trend={<span>{finance.socialCaseCount} social cases</span>}
+              trend={<span>{t("socialCases", { count: finance.socialCaseCount })}</span>}
             />
             <StatCard
-              label="Fees Collected"
-              value={money(finance.feesCollected, activeClient.currency)}
+              label={t("feesCollected")}
+              value={money(finance.feesCollected, activeClient.currency, locale)}
               icon={<Wallet className="size-4.5" />}
               iconClassName="bg-success/12 text-success"
-              trend={<span>This period</span>}
+              trend={<span>{t("thisPeriod")}</span>}
             />
             <StatCard
-              label="Fees Outstanding"
-              value={money(finance.feesOutstanding, activeClient.currency)}
+              label={t("feesOutstanding")}
+              value={money(finance.feesOutstanding, activeClient.currency, locale)}
               icon={<AlertTriangle className="size-4.5" />}
               iconClassName="bg-brand-clay/15 text-brand-clay"
-              trend={<span>{finance.unpaidCount} unpaid</span>}
+              trend={<span>{t("unpaid", { count: finance.unpaidCount })}</span>}
             />
             <StatCard
-              label="Expenses"
-              value={money(finance.expensesThisMonth, activeClient.currency)}
+              label={t("expenses")}
+              value={money(finance.expensesThisMonth, activeClient.currency, locale)}
               icon={<Receipt className="size-4.5" />}
               iconClassName="bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
-              trend={<span>Logged this period</span>}
+              trend={<span>{t("loggedThisPeriod")}</span>}
             />
           </div>
         </div>
@@ -185,10 +188,10 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
           <div className="mb-1 flex items-center justify-between">
             <h3 className="font-heading text-base font-semibold text-foreground">
-              Payroll Trend
+              {t("payrollTrend")}
             </h3>
             <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              Last 6 months
+              {t("last6Months")}
             </span>
           </div>
           <PayrollTrendChart data={trend} currency={activeClient.currency} />

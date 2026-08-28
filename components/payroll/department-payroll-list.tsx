@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations, useLocale } from "next-intl";
 import type { DeptPayroll } from "@/lib/aggregate";
 import { money } from "@/lib/format";
 import { swatch } from "@/lib/colors";
@@ -10,16 +13,18 @@ export function DepartmentPayrollList({
   data: DeptPayroll[];
   currency: Currency;
 }) {
+  const t = useTranslations("dashboardWidgets");
+  const locale = useLocale() as "en" | "fr";
   const max = Math.max(1, ...data.map((d) => d.amount));
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <h3 className="mb-4 font-heading text-base font-semibold text-foreground">
-        Payroll by Department
+        {t("payrollByDepartment")}
       </h3>
       {data.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Add a department to see payroll split out here.
+          {t("addDepartmentHint")}
         </p>
       ) : (
         <div className="flex flex-col gap-4">
@@ -28,7 +33,7 @@ export function DepartmentPayrollList({
               <div className="mb-1.5 flex items-baseline justify-between text-sm">
                 <span className="font-medium text-foreground">{department.name}</span>
                 <span className="text-muted-foreground">
-                  {money(amount, currency)}
+                  {money(amount, currency, locale)}
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">

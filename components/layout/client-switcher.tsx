@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChevronDown, Check, Plus } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import {
@@ -14,6 +15,7 @@ import {
 import { swatch } from "@/lib/colors";
 
 export function ClientSwitcher() {
+  const t = useTranslations("topbar");
   const { clients, activeClient, setActiveClient } = usePayroll();
 
   return (
@@ -36,7 +38,7 @@ export function ClientSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-72" align="start">
         <DropdownMenuLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-          Switch client
+          {t("switchClient")}
         </DropdownMenuLabel>
         {clients.map((c) => (
           <DropdownMenuItem
@@ -65,7 +67,7 @@ export function ClientSwitcher() {
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/clients" />} className="gap-2.5">
           <Plus className="size-4" />
-          Manage clients
+          {t("manageClients")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

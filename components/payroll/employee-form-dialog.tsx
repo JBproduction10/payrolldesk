@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import { useTranslations } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { Employee, EmployeeStatus } from "@/lib/types";
 import { toast } from "@/components/ui/toast";
@@ -47,6 +48,7 @@ export function EmployeeFormDialog({
   trigger: ReactElement;
   employee?: Employee;
 }) {
+  const t = useTranslations("employeeForm");
   const { activeClient, clientDepartments, addEmployee, updateEmployee } = usePayroll();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -96,7 +98,7 @@ export function EmployeeFormDialog({
         status: form.status,
         channels,
       });
-      toast.add({ title: `Updated ${form.name.trim()}`, type: "success" });
+      toast.add({ title: t("updatedToast", { name: form.name.trim() }), type: "success" });
     } else {
       addEmployee({
         name: form.name.trim(),
@@ -113,7 +115,7 @@ export function EmployeeFormDialog({
         )}`,
         values: {},
       });
-      toast.add({ title: `Added ${form.name.trim()}`, type: "success" });
+      toast.add({ title: t("addedToast", { name: form.name.trim() }), type: "success" });
     }
     setOpen(false);
   }
@@ -123,27 +125,27 @@ export function EmployeeFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Employee" : "Add Employee"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this employee's details."
-              : `Add a new employee to ${activeClient.name}.`}
+              ? t("editDescription")
+              : t("addDescription", { schoolName: activeClient.name })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="ef-name">Full name *</Label>
+            <Label htmlFor="ef-name">{t("fullName")}</Label>
             <Input
               id="ef-name"
-              placeholder="e.g. Jane Doe"
+              placeholder={t("fullNamePlaceholder")}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-email">Email *</Label>
+            <Label htmlFor="ef-email">{t("email")}</Label>
             <Input
               id="ef-email"
               type="email"
@@ -154,7 +156,7 @@ export function EmployeeFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-phone">Phone / WhatsApp</Label>
+            <Label htmlFor="ef-phone">{t("phone")}</Label>
             <Input
               id="ef-phone"
               placeholder="+1 555 000 0000"
@@ -164,7 +166,7 @@ export function EmployeeFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-dept">Department *</Label>
+            <Label htmlFor="ef-dept">{t("department")}</Label>
             <NativeSelect
               id="ef-dept"
               className="w-full"
@@ -172,7 +174,7 @@ export function EmployeeFormDialog({
               onChange={(e) => setForm((f) => ({ ...f, departmentId: e.target.value }))}
             >
               <NativeSelectOption value="" disabled>
-                Select department
+                {t("selectDepartment")}
               </NativeSelectOption>
               {clientDepartments.map((d) => (
                 <NativeSelectOption key={d.id} value={d.id}>
@@ -183,17 +185,17 @@ export function EmployeeFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-position">Position *</Label>
+            <Label htmlFor="ef-position">{t("position")}</Label>
             <Input
               id="ef-position"
-              placeholder="e.g. Engineer"
+              placeholder={t("positionPlaceholder")}
               value={form.position}
               onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-salary">Base salary ({activeClient.currency}) *</Label>
+            <Label htmlFor="ef-salary">{t("baseSalary", { currency: activeClient.currency })}</Label>
             <Input
               id="ef-salary"
               type="number"
@@ -205,7 +207,7 @@ export function EmployeeFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-join">Join date</Label>
+            <Label htmlFor="ef-join">{t("joinDate")}</Label>
             <Input
               id="ef-join"
               type="date"
@@ -215,7 +217,7 @@ export function EmployeeFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ef-status">Status</Label>
+            <Label htmlFor="ef-status">{t("status")}</Label>
             <NativeSelect
               id="ef-status"
               className="w-full"
@@ -224,19 +226,19 @@ export function EmployeeFormDialog({
                 setForm((f) => ({ ...f, status: e.target.value as EmployeeStatus }))
               }
             >
-              <NativeSelectOption value="active">Active</NativeSelectOption>
-              <NativeSelectOption value="leave">On Leave</NativeSelectOption>
-              <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+              <NativeSelectOption value="active">{t("statusActive")}</NativeSelectOption>
+              <NativeSelectOption value="leave">{t("statusLeave")}</NativeSelectOption>
+              <NativeSelectOption value="inactive">{t("statusInactive")}</NativeSelectOption>
             </NativeSelect>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid}>
-            {isEdit ? "Save Changes" : "Add Employee"}
+            {isEdit ? t("saveChanges") : t("addEmployee")}
           </Button>
         </DialogFooter>
       </DialogContent>

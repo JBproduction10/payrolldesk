@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactElement } from "react";
+import { useTranslations } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { Client, Currency } from "@/lib/types";
 import type { BrandColorKey } from "@/lib/colors";
@@ -20,7 +21,7 @@ import {
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ColorSwatchPicker } from "./color-swatch-picker";
 
-const CURRENCIES: Currency[] = ["USD", "GBP", "EUR", "NGN", "KES", "ZAR", "GHS"];
+const CURRENCIES: Currency[] = ["USD", "GBP", "EUR", "NGN", "KES", "ZAR", "GHS", "CDF"];
 
 interface FormState {
   name: string;
@@ -47,6 +48,7 @@ export function ClientFormDialog({
   trigger: ReactElement;
   client?: Client;
 }) {
+  const t = useTranslations("clientForm");
   const { addClient, updateClient } = usePayroll();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -82,12 +84,12 @@ export function ClientFormDialog({
     };
     if (isEdit && client) {
       updateClient(client.id, payload);
-      toast.add({ title: `Updated ${payload.name}`, type: "success" });
+      toast.add({ title: t("updatedToast", { name: payload.name }), type: "success" });
     } else {
       addClient(payload);
       toast.add({
-        title: `Added ${payload.name}`,
-        description: "Switched to this client",
+        title: t("addedToast", { name: payload.name }),
+        description: t("switchedDescription"),
         type: "success",
       });
     }
@@ -99,27 +101,27 @@ export function ClientFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit client" : "Add client"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this organisation's details."
-              : "Create a new organisation to run payroll for."}
+              ? t("editDescription")
+              : t("addDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cf-name">Client name</Label>
+            <Label htmlFor="cf-name">{t("clientName")}</Label>
             <Input
               id="cf-name"
-              placeholder="e.g. Aurora Studios"
+              placeholder={t("clientNamePlaceholder")}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cf-domain">Email domain</Label>
+            <Label htmlFor="cf-domain">{t("emailDomain")}</Label>
             <Input
               id="cf-domain"
               placeholder="acme.io"
@@ -127,15 +129,15 @@ export function ClientFormDialog({
               onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
             />
             <p className="text-xs text-muted-foreground">
-              Used for employee email addresses, e.g. name@{form.domain || "domain.com"}
+              {t("emailDomainHint", { domain: form.domain || "domain.com" })}
             </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cf-desc">Description</Label>
+            <Label htmlFor="cf-desc">{t("description")}</Label>
             <Input
               id="cf-desc"
-              placeholder="e.g. Product design studio"
+              placeholder={t("descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
@@ -143,7 +145,7 @@ export function ClientFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cf-currency">Currency</Label>
+              <Label htmlFor="cf-currency">{t("currency")}</Label>
               <NativeSelect
                 id="cf-currency"
                 className="w-full"
@@ -160,7 +162,7 @@ export function ClientFormDialog({
               </NativeSelect>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cf-payday">Pay day</Label>
+              <Label htmlFor="cf-payday">{t("payDay")}</Label>
               <Input
                 id="cf-payday"
                 type="number"
@@ -173,7 +175,7 @@ export function ClientFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Brand colour</Label>
+            <Label>{t("brandColour")}</Label>
             <ColorSwatchPicker
               value={form.color}
               onChange={(c) => setForm((f) => ({ ...f, color: c }))}
@@ -183,10 +185,10 @@ export function ClientFormDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid}>
-            {isEdit ? "Save changes" : "Add client"}
+            {isEdit ? t("saveChanges") : t("addClient")}
           </Button>
         </DialogFooter>
       </DialogContent>

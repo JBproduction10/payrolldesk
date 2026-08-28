@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Search, Plus, Pencil, Trash2, Wallet, History } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { money, periodLabel } from "@/lib/format";
@@ -31,16 +32,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const STATUS_TABS: { key: "all" | FeeStatus | "none"; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "paid", label: "Paid" },
-  { key: "partial", label: "Partial" },
-  { key: "unpaid", label: "Unpaid" },
-  { key: "social_case", label: "Social Cases" },
-  { key: "none", label: "Not recorded" },
+const STATUS_TABS: {
+  key: "all" | FeeStatus | "none";
+  labelKey: "statusAll" | "statusPaid" | "statusPartial" | "statusUnpaid" | "statusSocialCase" | "statusNone";
+}[] = [
+  { key: "all", labelKey: "statusAll" },
+  { key: "paid", labelKey: "statusPaid" },
+  { key: "partial", labelKey: "statusPartial" },
+  { key: "unpaid", labelKey: "statusUnpaid" },
+  { key: "social_case", labelKey: "statusSocialCase" },
+  { key: "none", labelKey: "statusNone" },
 ];
 
 export default function StudentsPage() {
+  const t = useTranslations("studentsPage");
+  const locale = useLocale() as "en" | "fr";
   const {
     activeClient,
     clientStudents,
@@ -75,10 +81,10 @@ export default function StudentsPage() {
   function handleDelete(id: string, name: string) {
     removeStudent(id);
     toast.add({
-      title: `Removed ${name}`,
+      title: t("removedToast", { name }),
       type: "success",
       actionProps: {
-        children: "Undo",
+        children: t("undo"),
         onClick: () => restoreStudent(id),
       },
     });
@@ -87,8 +93,8 @@ export default function StudentsPage() {
   return (
     <>
       <PageHeader
-        title="Students"
-        description={`${clientStudents.length} students enrolled at ${activeClient.name}`}
+        title={t("title")}
+        description={t("description", { count: clientStudents.length, schoolName: activeClient.name })}
         action={
           <div className="flex items-center gap-2">
             <PeriodSwitcher />
@@ -96,12 +102,12 @@ export default function StudentsPage() {
               trigger={
                 <Button variant="outline">
                   <Trash2 className="size-4" />
-                  Trash
+                  {t("trash")}
                   {deletedStudents.length > 0 ? ` (${deletedStudents.length})` : ""}
                 </Button>
               }
-              title="Deleted students"
-              emptyLabel="No deleted students for this school."
+              title={t("deletedStudentsTitle")}
+              emptyLabel={t("noDeletedStudents")}
               rows={deletedStudents.map((s) => ({
                 id: s.id,
                 name: s.name,
@@ -115,7 +121,7 @@ export default function StudentsPage() {
               trigger={
                 <Button>
                   <Plus className="size-4" />
-                  Add Student
+                  {t("addStudent")}
                 </Button>
               }
             />
@@ -124,16 +130,16 @@ export default function StudentsPage() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Students" value={finance.studentCount} />
+        <StatCard label={t("statCardStudents")} value={finance.studentCount} />
         <StatCard
-          label={`Fees collected — ${periodLabel(period)}`}
-          value={money(finance.feesCollected, activeClient.currency)}
+          label={t("statCardFeesCollected", { period: periodLabel(period, locale) })}
+          value={money(finance.feesCollected, activeClient.currency, locale)}
           className="border-success/30 bg-success/5"
         />
         <StatCard
-          label="Fees outstanding"
-          value={money(finance.feesOutstanding, activeClient.currency)}
-          trend={<span>{finance.unpaidCount} unpaid · {finance.socialCaseCount} social cases</span>}
+          label={t("statCardFeesOutstanding")}
+          value={money(finance.feesOutstanding, activeClient.currency, locale)}
+          trend={<span>{t("unpaidAndSocial", { unpaid: finance.unpaidCount, social: finance.socialCaseCount })}</span>}
         />
       </div>
 
@@ -146,7 +152,7 @@ export default function StudentsPage() {
               setQuery(e.target.value);
               resetPage();
             }}
-            placeholder="Search name, class…"
+            placeholder={t("searchPlaceholder")}
             className="h-9 pl-9"
           />
         </div>
@@ -164,7 +170,7 @@ export default function StudentsPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </div>
@@ -175,19 +181,19 @@ export default function StudentsPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Monthly Fee</TableHead>
-                <TableHead>Paid ({periodLabel(period)})</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("columnStudent")}</TableHead>
+                <TableHead>{t("columnClass")}</TableHead>
+                <TableHead>{t("columnMonthlyFee")}</TableHead>
+                <TableHead>{t("columnPaid", { period: periodLabel(period, locale) })}</TableHead>
+                <TableHead>{t("columnStatus")}</TableHead>
+                <TableHead className="text-right">{t("columnActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                    No students match your filters.
+                    {t("noResults")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -199,7 +205,7 @@ export default function StudentsPage() {
                       <TableCell>
                         <div className="font-medium text-foreground">{s.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {s.guardianContact || "No guardian contact on file"}
+                          {s.guardianContact || t("noGuardianContact")}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -211,10 +217,10 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-foreground">
-                        {money(s.monthlyFee, activeClient.currency)}
+                        {money(s.monthlyFee, activeClient.currency, locale)}
                       </TableCell>
                       <TableCell className="font-medium text-foreground">
-                        {money(record?.amountPaid ?? 0, activeClient.currency)}
+                        {money(record?.amountPaid ?? 0, activeClient.currency, locale)}
                       </TableCell>
                       <TableCell>
                         <FeeStatusBadge status={record?.status ?? "unpaid"} />
@@ -240,7 +246,7 @@ export default function StudentsPage() {
                             trigger={
                               <Button variant="outline" size="sm">
                                 <Wallet className="size-3.5" />
-                                Payment
+                                {t("payment")}
                               </Button>
                             }
                           />
@@ -253,8 +259,8 @@ export default function StudentsPage() {
                             }
                           />
                           <ConfirmDeleteDialog
-                            title={`Remove ${s.name}?`}
-                            description="This moves the student to Trash along with their payment history. You can restore them anytime."
+                            title={t("removeConfirmTitle", { name: s.name })}
+                            description={t("removeConfirmDescription")}
                             onConfirm={() => handleDelete(s.id, s.name)}
                             trigger={
                               <Button
@@ -282,7 +288,7 @@ export default function StudentsPage() {
           to={to}
           total={total}
           onPageChange={setPage}
-          itemLabel="students"
+          itemLabel={t("itemLabel")}
         />
       </div>
     </>

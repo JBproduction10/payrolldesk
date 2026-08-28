@@ -1,6 +1,6 @@
 export type ID = string;
 
-export type Currency = "USD" | "NGN" | "GBP" | "EUR" | "KES" | "ZAR" | "GHS";
+export type Currency = "USD" | "NGN" | "GBP" | "EUR" | "KES" | "ZAR" | "GHS" | "CDF";
 
 export interface Client {
   id: ID;

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { Sparkles } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { computePayslip } from "@/lib/payroll";
@@ -27,6 +28,8 @@ export function GeneratePayslipsDialog({
   trigger: ReactElement;
   redirectOnGenerate?: boolean;
 }) {
+  const t = useTranslations("dashboardWidgets");
+  const locale = useLocale() as "en" | "fr";
   const { period, clientEmployees, clientFields, activeClient, generatePayslips } =
     usePayroll();
   const router = useRouter();
@@ -58,8 +61,8 @@ export function GeneratePayslipsDialog({
   function handleGenerate() {
     const count = generatePayslips(selected);
     toast.add({
-      title: `Generated ${count} payslip${count === 1 ? "" : "s"}`,
-      description: `${periodLabel(selected)} · ${activeClient.name}`,
+      title: count === 1 ? t("generatedToastOne", { count }) : t("generatedToastOther", { count }),
+      description: `${periodLabel(selected, locale)} · ${activeClient.name}`,
       type: "success",
     });
     setOpen(false);
@@ -77,14 +80,14 @@ export function GeneratePayslipsDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Generate Payslips</DialogTitle>
+          <DialogTitle>{t("generatePayslipsTitle")}</DialogTitle>
           <DialogDescription>
-            Create draft payslips for every active employee at {activeClient.name}.
+            {t("generatePayslipsDescription", { schoolName: activeClient.name })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="gp-period">Pay period</Label>
+          <Label htmlFor="gp-period">{t("payPeriod")}</Label>
           <NativeSelect
             id="gp-period"
             className="w-full"
@@ -93,7 +96,7 @@ export function GeneratePayslipsDialog({
           >
             {periodOptions.map((p) => (
               <NativeSelectOption key={p} value={p}>
-                {periodLabel(p)}
+                {periodLabel(p, locale)}
               </NativeSelectOption>
             ))}
           </NativeSelect>
@@ -102,23 +105,23 @@ export function GeneratePayslipsDialog({
         <div className="rounded-xl border border-border bg-muted/50 p-4">
           <div className="mb-3 flex items-center gap-1.5 text-sm font-medium text-foreground">
             <Sparkles className="size-3.5 text-brand-gold" />
-            Preview for {periodLabel(selected)}
+            {t("previewFor", { period: periodLabel(selected, locale) })}
           </div>
           <dl className="flex flex-col gap-2 text-sm">
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Employees included</dt>
+              <dt className="text-muted-foreground">{t("employeesIncluded")}</dt>
               <dd className="font-medium text-foreground">{targets.length}</dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Total deductions</dt>
+              <dt className="text-muted-foreground">{t("totalDeductions")}</dt>
               <dd className="font-medium text-destructive">
-                −{money(totals.deductions, activeClient.currency)}
+                −{money(totals.deductions, activeClient.currency, locale)}
               </dd>
             </div>
             <div className="flex items-center justify-between border-t border-border pt-2">
-              <dt className="font-medium text-foreground">Net payable</dt>
+              <dt className="font-medium text-foreground">{t("netPayable")}</dt>
               <dd className="font-heading text-base font-semibold text-primary">
-                {money(totals.net, activeClient.currency)}
+                {money(totals.net, activeClient.currency, locale)}
               </dd>
             </div>
           </dl>
@@ -126,10 +129,12 @@ export function GeneratePayslipsDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleGenerate} disabled={targets.length === 0}>
-            Generate {targets.length} Payslip{targets.length === 1 ? "" : "s"}
+            {targets.length === 1
+              ? t("generateOne", { count: targets.length })
+              : t("generateOther", { count: targets.length })}
           </Button>
         </DialogFooter>
       </DialogContent>

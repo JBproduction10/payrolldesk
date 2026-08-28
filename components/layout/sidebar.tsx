@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MANAGE_NAV, PAYROLL_NAV, type NavItem } from "./nav-config";
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+  const t = useTranslations("nav");
   const Icon = item.icon;
   return (
     <Link
@@ -20,7 +22,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       )}
     >
       <Icon className="size-4 shrink-0" />
-      {item.label}
+      {t(item.labelKey)}
     </Link>
   );
 }
@@ -33,6 +35,7 @@ function isActive(pathname: string, href: string) {
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const t = useTranslations("nav");
   const userName = session?.user?.name ?? "Admin";
   const userEmail = session?.user?.email ?? "";
   const userInitials = userName
@@ -53,14 +56,14 @@ export function Sidebar() {
           <div className="font-heading text-base font-semibold text-foreground">
             Payroll Desk
           </div>
-          <div className="text-xs text-muted-foreground">Payroll · Admin</div>
+          <div className="text-xs text-muted-foreground">{t("payrollAdmin")}</div>
         </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 pb-4 scrollbar-thin">
         <div>
           <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-            Manage
+            {t("manageSection")}
           </div>
           <div className="flex flex-col gap-0.5">
             {MANAGE_NAV.map((item) => (
@@ -75,7 +78,7 @@ export function Sidebar() {
 
         <div>
           <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-            Payroll
+            {t("payrollSection")}
           </div>
           <div className="flex flex-col gap-0.5">
             {PAYROLL_NAV.map((item) => (

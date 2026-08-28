@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations, useLocale } from "next-intl";
 import { Sparkles, CheckCheck, Eye } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import type { Employee, Payslip } from "@/lib/types";
@@ -25,6 +26,8 @@ import {
 } from "@/components/ui/table";
 
 export default function PayslipsPage() {
+  const t = useTranslations("payslipsPage");
+  const locale = useLocale() as "en" | "fr";
   const {
     activeClient,
     period,
@@ -61,8 +64,8 @@ export default function PayslipsPage() {
   return (
     <>
       <PageHeader
-        title="Payslips"
-        description={`${periodLabel(period)} · ${periodPayslips.length} payslips generated`}
+        title={t("title")}
+        description={t("description", { period: periodLabel(period, locale), count: periodPayslips.length })}
         action={
           <div className="flex items-center gap-2">
             {periodPayslips.length > 0 && (
@@ -71,11 +74,11 @@ export default function PayslipsPage() {
                 disabled={pendingCount === 0}
                 onClick={() => {
                   markAllSent(period);
-                  toast.add({ title: `Marked ${pendingCount} payslips as sent`, type: "success" });
+                  toast.add({ title: t("markedAllSentToast", { count: pendingCount }), type: "success" });
                 }}
               >
                 <CheckCheck className="size-4" />
-                Mark All Sent
+                {t("markAllSent")}
                 <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-xs">
                   {periodPayslips.length}
                 </span>
@@ -85,7 +88,7 @@ export default function PayslipsPage() {
               trigger={
                 <Button>
                   <Sparkles className="size-4" />
-                  Generate Payslips
+                  {t("generatePayslips")}
                 </Button>
               }
             />
@@ -94,17 +97,17 @@ export default function PayslipsPage() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Payslips" value={periodPayslips.length} trend={<span>{sentCount} sent</span>} />
+        <StatCard label={t("payslips")} value={periodPayslips.length} trend={<span>{t("sent", { count: sentCount })}</span>} />
         <StatCard
-          label="Total deductions"
-          value={`−${money(totals.deductions, activeClient.currency)}`}
-          trend={<span>Across all staff</span>}
+          label={t("totalDeductions")}
+          value={`−${money(totals.deductions, activeClient.currency, locale)}`}
+          trend={<span>{t("acrossAllStaff")}</span>}
         />
         <StatCard
-          label="Net payable"
-          value={money(totals.net, activeClient.currency)}
+          label={t("netPayable")}
+          value={money(totals.net, activeClient.currency, locale)}
           className="border-primary/30 bg-primary/5"
-          trend={<span>For {periodLabel(period)}</span>}
+          trend={<span>{t("forPeriod", { period: periodLabel(period, locale) })}</span>}
         />
       </div>
 
@@ -112,10 +115,10 @@ export default function PayslipsPage() {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
           <Sparkles className="size-8 text-brand-gold" />
           <p className="text-sm text-muted-foreground">
-            No payslips generated for {periodLabel(period)} yet.
+            {t("noPayslipsYet", { period: periodLabel(period, locale) })}
           </p>
           <GeneratePayslipsDialog
-            trigger={<Button>Generate Payslips</Button>}
+            trigger={<Button>{t("generatePayslips")}</Button>}
           />
         </div>
       ) : (
@@ -124,13 +127,13 @@ export default function PayslipsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Gross</TableHead>
-                  <TableHead>Deductions</TableHead>
-                  <TableHead>Net Pay</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">View</TableHead>
+                  <TableHead>{t("columnEmployee")}</TableHead>
+                  <TableHead>{t("columnPeriod")}</TableHead>
+                  <TableHead>{t("columnGross")}</TableHead>
+                  <TableHead>{t("columnDeductions")}</TableHead>
+                  <TableHead>{t("columnNetPay")}</TableHead>
+                  <TableHead>{t("columnStatus")}</TableHead>
+                  <TableHead className="text-right">{t("columnView")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -148,16 +151,16 @@ export default function PayslipsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {periodLabel(payslip.period)}
+                      {periodLabel(payslip.period, locale)}
                     </TableCell>
                     <TableCell className="text-foreground">
-                      {money(payslip.gross, activeClient.currency)}
+                      {money(payslip.gross, activeClient.currency, locale)}
                     </TableCell>
                     <TableCell className="text-destructive">
-                      −{money(payslip.totalDeductions, activeClient.currency)}
+                      −{money(payslip.totalDeductions, activeClient.currency, locale)}
                     </TableCell>
                     <TableCell className="font-medium text-foreground">
-                      {money(payslip.net, activeClient.currency)}
+                      {money(payslip.net, activeClient.currency, locale)}
                     </TableCell>
                     <TableCell>
                       <PayslipStatusBadge status={payslip.status} />
@@ -172,7 +175,7 @@ export default function PayslipsPage() {
                         trigger={
                           <Button variant="outline" size="sm">
                             <Eye className="size-3.5" />
-                            Preview
+                            {t("preview")}
                           </Button>
                         }
                       />
@@ -189,7 +192,7 @@ export default function PayslipsPage() {
             to={to}
             total={total}
             onPageChange={setPage}
-            itemLabel="payslips"
+            itemLabel={t("itemLabel")}
           />
         </div>
       )}

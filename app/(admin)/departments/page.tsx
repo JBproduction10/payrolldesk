@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations, useLocale } from "next-intl";
 import { Plus, Pencil, Trash2, Users } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { money } from "@/lib/format";
@@ -13,6 +14,8 @@ import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog"
 import { Button } from "@/components/ui/button";
 
 export default function DepartmentsPage() {
+  const t = useTranslations("departmentsPage");
+  const locale = useLocale() as "en" | "fr";
   const {
     activeClient,
     clientDepartments,
@@ -28,14 +31,14 @@ export default function DepartmentsPage() {
   return (
     <>
       <PageHeader
-        title="Departments"
-        description={`${clientDepartments.length} departments · ${clientEmployees.length} employees`}
+        title={t("title")}
+        description={t("description", { deptCount: clientDepartments.length, empCount: clientEmployees.length })}
         action={
           <DepartmentFormDialog
             trigger={
               <Button>
                 <Plus className="size-4" />
-                Add Department
+                {t("addDepartment")}
               </Button>
             }
           />
@@ -44,19 +47,19 @@ export default function DepartmentsPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Total headcount"
+          label={t("totalHeadcount")}
           value={clientEmployees.length}
           icon={<Users className="size-4.5" />}
           iconClassName="bg-brand-pine-mid/15 text-brand-pine-mid"
         />
         <StatCard
-          label="Monthly payroll"
-          value={money(totalPayroll, activeClient.currency)}
+          label={t("monthlyPayroll")}
+          value={money(totalPayroll, activeClient.currency, locale)}
           icon={<span className="text-sm font-semibold">{activeClient.currency}</span>}
           iconClassName="bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
         />
         <StatCard
-          label="Departments"
+          label={t("departments")}
           value={clientDepartments.length}
           icon={<span className="text-sm font-semibold">#</span>}
           iconClassName="bg-brand-olive/15 text-brand-olive"
@@ -65,7 +68,7 @@ export default function DepartmentsPage() {
 
       {clientDepartments.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center text-muted-foreground">
-          No departments yet — add one to start grouping employees.
+          {t("noDepartmentsYet")}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -88,7 +91,7 @@ export default function DepartmentsPage() {
                     <Users className="size-4.5" />
                   </div>
                   <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    {staff.length} people
+                    {t("peopleCount", { count: staff.length })}
                   </span>
                 </div>
 
@@ -99,22 +102,22 @@ export default function DepartmentsPage() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-muted/60 p-3">
                   <div>
-                    <div className="text-xs text-muted-foreground">Head</div>
+                    <div className="text-xs text-muted-foreground">{t("head")}</div>
                     <div className="truncate text-sm font-medium text-foreground">
-                      {head?.name ?? "Unassigned"}
+                      {head?.name ?? t("unassigned")}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Monthly payroll</div>
+                    <div className="text-xs text-muted-foreground">{t("monthlyPayroll")}</div>
                     <div className="text-sm font-medium text-foreground">
-                      {money(payroll, activeClient.currency)}
+                      {money(payroll, activeClient.currency, locale)}
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4">
                   <div className="mb-2 text-xs font-medium text-muted-foreground">
-                    Members
+                    {t("members")}
                   </div>
                   <div className="flex items-center">
                     {visible.map((e, i) => (
@@ -132,7 +135,7 @@ export default function DepartmentsPage() {
                       </span>
                     )}
                     {staff.length === 0 && (
-                      <span className="text-xs text-muted-foreground">No members yet</span>
+                      <span className="text-xs text-muted-foreground">{t("noMembersYet")}</span>
                     )}
                   </div>
                 </div>
@@ -143,13 +146,17 @@ export default function DepartmentsPage() {
                     trigger={
                       <Button variant="outline" size="sm" className="flex-1">
                         <Pencil className="size-3.5" />
-                        Edit
+                        {t("edit")}
                       </Button>
                     }
                   />
                   <ConfirmDeleteDialog
-                    title={`Delete ${d.name}?`}
-                    description={`This removes the department and its ${staff.length} employee${staff.length === 1 ? "" : "s"}. This can't be undone.`}
+                    title={t("deleteConfirmTitle", { name: d.name })}
+                    description={
+                      staff.length === 1
+                        ? t("deleteConfirmDescriptionOne", { count: staff.length })
+                        : t("deleteConfirmDescriptionOther", { count: staff.length })
+                    }
                     onConfirm={() => removeDepartment(d.id)}
                     trigger={
                       <Button

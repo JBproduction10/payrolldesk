@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Mail, Send, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/payroll/page-header";
 import { toast } from "@/components/ui/toast";
@@ -44,20 +45,21 @@ interface EmailConfigView {
   updatedAt: string | null;
 }
 
-const PROVIDER_LABEL: Record<ProviderKind, string> = {
-  resend: "Resend",
-  sendgrid: "SendGrid",
-  smtp: "SMTP (Gmail, Outlook, your own server)",
+const PROVIDER_LABEL_KEY: Record<ProviderKind, string> = {
+  resend: "providerResend",
+  sendgrid: "providerSendgrid",
+  smtp: "providerSmtp",
 };
 
-const NOTIFICATION_LABEL: Record<keyof EmailConfigView["notifications"], { label: string; hint: string }> = {
-  invite: { label: "Team invites", hint: "\"Set your password\" email when someone is added to Team & Access" },
-  passwordReset: { label: "Password reset", hint: "Sent from the public \"Forgot password\" page" },
-  payslip: { label: "Payslips", hint: "Sent from Send Payslips" },
-  feeReminder: { label: "Fee reminders", hint: "Sent to guardians from the Students page" },
+const NOTIFICATION_LABEL_KEY: Record<keyof EmailConfigView["notifications"], { labelKey: string; hintKey: string }> = {
+  invite: { labelKey: "notifInviteLabel", hintKey: "notifInviteHint" },
+  passwordReset: { labelKey: "notifPasswordResetLabel", hintKey: "notifPasswordResetHint" },
+  payslip: { labelKey: "notifPayslipLabel", hintKey: "notifPayslipHint" },
+  feeReminder: { labelKey: "notifFeeReminderLabel", hintKey: "notifFeeReminderHint" },
 };
 
 export default function EmailSettingsPage() {
+  const t = useTranslations("emailSettingsPage");
   const [config, setConfig] = useState<EmailConfigView | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,13 +79,13 @@ export default function EmailSettingsPage() {
       const res = await fetch("/api/admin/email-config", { cache: "no-store" });
       const data = await res.json();
       if (res.ok) setConfig(data);
-      else toast.add({ title: data.error ?? "Failed to load email settings", type: "error" });
+      else toast.add({ title: data.error ?? t("loadErrorToast"), type: "error" });
     } catch {
-      toast.add({ title: "Failed to load email settings", type: "error" });
+      toast.add({ title: t("loadErrorToast"), type: "error" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -113,16 +115,16 @@ export default function EmailSettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.add({ title: data.error ?? "Failed to save", type: "error" });
+        toast.add({ title: data.error ?? t("saveErrorToast"), type: "error" });
         return;
       }
       setConfig(data);
       setSmtpPassword("");
       setSendgridKey("");
       setResendKey("");
-      toast.add({ title: "Email settings saved", type: "success" });
+      toast.add({ title: t("savedToast"), type: "success" });
     } catch {
-      toast.add({ title: "Failed to save email settings", type: "error" });
+      toast.add({ title: t("saveFailedToast"), type: "error" });
     } finally {
       setSaving(false);
     }
@@ -139,12 +141,12 @@ export default function EmailSettingsPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.add({ title: `Test email sent to ${testTo.trim()}`, type: "success" });
+        toast.add({ title: t("testSentToast", { email: testTo.trim() }), type: "success" });
       } else {
-        toast.add({ title: data.error ?? "Test email failed to send", type: "error" });
+        toast.add({ title: data.error ?? t("testFailedToast"), type: "error" });
       }
     } catch {
-      toast.add({ title: "Test email failed to send", type: "error" });
+      toast.add({ title: t("testFailedToast"), type: "error" });
     } finally {
       setTesting(false);
     }
@@ -153,7 +155,7 @@ export default function EmailSettingsPage() {
   if (loading || !config) {
     return (
       <>
-        <PageHeader title="Email Settings" description="Choose how Payroll Desk sends email" />
+        <PageHeader title={t("title")} description={t("shortDescription")} />
         <div className="flex justify-center py-20 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
@@ -164,8 +166,8 @@ export default function EmailSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Email Settings"
-        description="Choose how Payroll Desk sends invites, password resets, payslips, and fee reminders"
+        title={t("title")}
+        description={t("description")}
       />
 
       <div className="flex flex-col gap-6">
@@ -173,17 +175,17 @@ export default function EmailSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="size-4 text-muted-foreground" />
-              Provider
+              {t("providerTitle")}
             </CardTitle>
             <CardDescription>
               {config.configured
-                ? "This organization has its own email configuration."
-                : "Not configured yet — falling back to the RESEND_API_KEY environment variable, if set."}
+                ? t("configuredDescription")
+                : t("notConfiguredDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-2 sm:max-w-xs">
-              <Label>Send using</Label>
+              <Label>{t("sendUsing")}</Label>
               <Select
                 value={config.provider}
                 onValueChange={(v) => v && update("provider", v as ProviderKind)}
@@ -192,9 +194,9 @@ export default function EmailSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(PROVIDER_LABEL) as ProviderKind[]).map((p) => (
+                  {(Object.keys(PROVIDER_LABEL_KEY) as ProviderKind[]).map((p) => (
                     <SelectItem key={p} value={p}>
-                      {PROVIDER_LABEL[p]}
+                      {t(PROVIDER_LABEL_KEY[p])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -203,7 +205,7 @@ export default function EmailSettingsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label>From name</Label>
+                <Label>{t("fromName")}</Label>
                 <Input
                   value={config.fromName}
                   onChange={(e) => update("fromName", e.target.value)}
@@ -211,7 +213,7 @@ export default function EmailSettingsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>From email</Label>
+                <Label>{t("fromEmail")}</Label>
                 <Input
                   type="email"
                   value={config.fromEmail}
@@ -222,7 +224,7 @@ export default function EmailSettingsPage() {
             </div>
 
             <div className="grid gap-2 sm:max-w-sm">
-              <Label>Reply-to (optional)</Label>
+              <Label>{t("replyTo")}</Label>
               <Input
                 type="email"
                 value={config.replyTo}
@@ -233,24 +235,24 @@ export default function EmailSettingsPage() {
 
             {config.provider === "resend" && (
               <div className="grid gap-2 sm:max-w-sm">
-                <Label>Resend API key</Label>
+                <Label>{t("resendApiKey")}</Label>
                 <Input
                   type="password"
                   value={resendKey}
                   onChange={(e) => setResendKey(e.target.value)}
-                  placeholder={config.resend.hasApiKey ? "•••••••••••••• (saved — leave blank to keep)" : "re_..."}
+                  placeholder={config.resend.hasApiKey ? t("savedLeaveBlank") : "re_..."}
                 />
               </div>
             )}
 
             {config.provider === "sendgrid" && (
               <div className="grid gap-2 sm:max-w-sm">
-                <Label>SendGrid API key</Label>
+                <Label>{t("sendgridApiKey")}</Label>
                 <Input
                   type="password"
                   value={sendgridKey}
                   onChange={(e) => setSendgridKey(e.target.value)}
-                  placeholder={config.sendgrid.hasApiKey ? "•••••••••••••• (saved — leave blank to keep)" : "SG...."}
+                  placeholder={config.sendgrid.hasApiKey ? t("savedLeaveBlank") : "SG...."}
                 />
               </div>
             )}
@@ -258,7 +260,7 @@ export default function EmailSettingsPage() {
             {config.provider === "smtp" && (
               <div className="grid gap-4 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label>SMTP host</Label>
+                  <Label>{t("smtpHost")}</Label>
                   <Input
                     value={config.smtp.host}
                     onChange={(e) => update("smtp", { ...config.smtp, host: e.target.value })}
@@ -266,7 +268,7 @@ export default function EmailSettingsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Port</Label>
+                  <Label>{t("port")}</Label>
                   <Input
                     type="number"
                     value={config.smtp.port}
@@ -276,19 +278,19 @@ export default function EmailSettingsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Username</Label>
+                  <Label>{t("username")}</Label>
                   <Input
                     value={config.smtp.user}
                     onChange={(e) => update("smtp", { ...config.smtp, user: e.target.value })}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Password</Label>
+                  <Label>{t("password")}</Label>
                   <Input
                     type="password"
                     value={smtpPassword}
                     onChange={(e) => setSmtpPassword(e.target.value)}
-                    placeholder={config.smtp.hasPassword ? "•••••••••••••• (saved — leave blank to keep)" : ""}
+                    placeholder={config.smtp.hasPassword ? t("savedLeaveBlank") : ""}
                   />
                 </div>
                 <Label className="flex items-center gap-2 sm:col-span-2">
@@ -298,7 +300,7 @@ export default function EmailSettingsPage() {
                       update("smtp", { ...config.smtp, secure: checked === true })
                     }
                   />
-                  Use TLS from the start (port 465). Leave off for STARTTLS on 587.
+                  {t("useTls")}
                 </Label>
               </div>
             )}
@@ -306,23 +308,23 @@ export default function EmailSettingsPage() {
           <CardFooter className="justify-end gap-2">
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="size-4 animate-spin" />}
-              Save settings
+              {t("saveSettings")}
             </Button>
           </CardFooter>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>Turn any of these off without changing anything else.</CardDescription>
+            <CardTitle>{t("notificationsTitle")}</CardTitle>
+            <CardDescription>{t("notificationsDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col divide-y divide-border">
-            {(Object.keys(NOTIFICATION_LABEL) as (keyof EmailConfigView["notifications"])[]).map(
+            {(Object.keys(NOTIFICATION_LABEL_KEY) as (keyof EmailConfigView["notifications"])[]).map(
               (key) => (
                 <div key={key} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{NOTIFICATION_LABEL[key].label}</p>
-                    <p className="text-xs text-muted-foreground">{NOTIFICATION_LABEL[key].hint}</p>
+                    <p className="text-sm font-medium text-foreground">{t(NOTIFICATION_LABEL_KEY[key].labelKey)}</p>
+                    <p className="text-xs text-muted-foreground">{t(NOTIFICATION_LABEL_KEY[key].hintKey)}</p>
                   </div>
                   <Switch
                     checked={config.notifications[key]}
@@ -340,10 +342,10 @@ export default function EmailSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Send className="size-4 text-muted-foreground" />
-              Send a test email
+              {t("sendTestTitle")}
             </CardTitle>
             <CardDescription>
-              Uses whatever is currently saved above (save first if you just changed something).
+              {t("sendTestDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -356,7 +358,7 @@ export default function EmailSettingsPage() {
               />
               <Button variant="outline" onClick={handleTest} disabled={testing || !testTo.trim()}>
                 {testing && <Loader2 className="size-4 animate-spin" />}
-                Send test
+                {t("sendTest")}
               </Button>
             </div>
           </CardContent>

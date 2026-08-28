@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import {
   FileText,
   UserPlus,
@@ -59,25 +60,27 @@ const ICONS: Record<LogEntry["kind"], typeof FileText> = {
   supply: PackageSearch,
 };
 
-const KIND_LABEL: Record<LogEntry["kind"], string> = {
-  generate: "Payslip generation",
-  send: "Payslip delivery",
-  employee: "Employees",
-  department: "Departments",
-  field: "Pay fields",
-  client: "Clients",
-  fail: "Delivery failure",
-  student: "Students",
-  payment: "Fee payments",
-  expense: "Expenses",
-  team: "Team & access",
-  requisition: "Requisitions",
-  supply: "Supplies & logistics",
+const KIND_LABEL_KEY: Record<LogEntry["kind"], string> = {
+  generate: "kindGenerate",
+  send: "kindSend",
+  employee: "kindEmployee",
+  department: "kindDepartment",
+  field: "kindField",
+  client: "kindClient",
+  fail: "kindFail",
+  student: "kindStudent",
+  payment: "kindPayment",
+  expense: "kindExpense",
+  team: "kindTeam",
+  requisition: "kindRequisition",
+  supply: "kindSupply",
 };
 
-const KIND_OPTIONS = Object.keys(KIND_LABEL) as LogEntry["kind"][];
+const KIND_OPTIONS = Object.keys(KIND_LABEL_KEY) as LogEntry["kind"][];
 
 export default function AuditLogPage() {
+  const t = useTranslations("auditPage");
+  const locale = useLocale() as "en" | "fr";
   const { logs, clients } = usePayroll();
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState<"all" | LogEntry["kind"]>("all");
@@ -114,8 +117,8 @@ export default function AuditLogPage() {
   return (
     <>
       <PageHeader
-        title="Audit Log"
-        description="Who did what, and when — across every client. Nothing here can be deleted."
+        title={t("title")}
+        description={t("description")}
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -127,7 +130,7 @@ export default function AuditLogPage() {
               setQuery(e.target.value);
               resetPage();
             }}
-            placeholder="Search action or person…"
+            placeholder={t("searchPlaceholder")}
             className="h-9 pl-9"
           />
         </div>
@@ -140,10 +143,10 @@ export default function AuditLogPage() {
           }}
         >
           <SelectTrigger className="h-9 w-full sm:w-48">
-            <SelectValue placeholder="All clients" />
+            <SelectValue placeholder={t("allClients")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
+            <SelectItem value="all">{t("allClients")}</SelectItem>
             {clients.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
@@ -160,13 +163,13 @@ export default function AuditLogPage() {
           }}
         >
           <SelectTrigger className="h-9 w-full sm:w-48">
-            <SelectValue placeholder="All action types" />
+            <SelectValue placeholder={t("allActionTypes")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All action types</SelectItem>
+            <SelectItem value="all">{t("allActionTypes")}</SelectItem>
             {KIND_OPTIONS.map((k) => (
               <SelectItem key={k} value={k}>
-                {KIND_LABEL[k]}
+                {t(KIND_LABEL_KEY[k])}
               </SelectItem>
             ))}
           </SelectContent>
@@ -181,7 +184,7 @@ export default function AuditLogPage() {
             }}
           />
           <ShieldAlert className="size-3.5 text-muted-foreground" />
-          Sensitive only
+          {t("sensitiveOnly")}
         </Label>
       </div>
 
@@ -190,17 +193,17 @@ export default function AuditLogPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Action</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>By</TableHead>
-                <TableHead className="text-right">When</TableHead>
+                <TableHead>{t("columnAction")}</TableHead>
+                <TableHead>{t("columnClient")}</TableHead>
+                <TableHead>{t("columnBy")}</TableHead>
+                <TableHead className="text-right">{t("columnWhen")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
-                    No activity matches your filters.
+                    {t("noActivity")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -226,13 +229,13 @@ export default function AuditLogPage() {
                         {clientName(log.clientId)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {log.actor ? log.actor.name : "System"}
+                        {log.actor ? log.actor.name : t("system")}
                       </TableCell>
                       <TableCell
                         className="text-right text-xs text-muted-foreground"
-                        title={formatDate(log.at)}
+                        title={formatDate(log.at, locale)}
                       >
-                        {timeAgo(log.at)}
+                        {timeAgo(log.at, locale)}
                       </TableCell>
                     </TableRow>
                   );
@@ -248,7 +251,7 @@ export default function AuditLogPage() {
           to={to}
           total={total}
           onPageChange={setPage}
-          itemLabel="entries"
+          itemLabel={t("itemLabel")}
         />
       </div>
     </>

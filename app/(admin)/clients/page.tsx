@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, Eye, Landmark, Users, Building2 } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { swatch } from "@/lib/colors";
@@ -12,6 +13,7 @@ import { TrashDialog } from "@/components/payroll/trash-dialog";
 import { Button } from "@/components/ui/button";
 
 export default function ClientsPage() {
+  const t = useTranslations("clientsPage");
   const {
     clients,
     departments,
@@ -27,15 +29,15 @@ export default function ClientsPage() {
 
   function handleDelete(id: string, name: string) {
     if (clients.length === 1) {
-      toast.add({ title: "Can't delete your only client", type: "error" });
+      toast.add({ title: t("cantDeleteOnly"), type: "error" });
       return;
     }
     removeClient(id);
     toast.add({
-      title: `Removed ${name}`,
+      title: t("removedToast", { name }),
       type: "success",
       actionProps: {
-        children: "Undo",
+        children: t("undo"),
         onClick: () => restoreClient(id),
       },
     });
@@ -44,20 +46,20 @@ export default function ClientsPage() {
   return (
     <>
       <PageHeader
-        title="Clients"
-        description="Manage the organisations you run payroll for"
+        title={t("title")}
+        description={t("description")}
         action={
           <div className="flex items-center gap-2">
             <TrashDialog
               trigger={
                 <Button variant="outline">
                   <Trash2 className="size-4" />
-                  Trash
+                  {t("trash")}
                   {deletedClients.length > 0 ? ` (${deletedClients.length})` : ""}
                 </Button>
               }
-              title="Deleted clients"
-              emptyLabel="No deleted clients."
+              title={t("deletedClientsTitle")}
+              emptyLabel={t("noDeletedClients")}
               rows={deletedClients.map((c) => ({
                 id: c.id,
                 name: c.name,
@@ -69,7 +71,7 @@ export default function ClientsPage() {
               trigger={
                 <Button>
                   <Plus className="size-4" />
-                  Add Client
+                  {t("addClient")}
                 </Button>
               }
             />
@@ -79,19 +81,19 @@ export default function ClientsPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Total clients"
+          label={t("totalClients")}
           value={clients.length}
           icon={<Landmark className="size-4.5" />}
           iconClassName="bg-brand-pine-mid/15 text-brand-pine-mid"
         />
         <StatCard
-          label="Total employees"
+          label={t("totalEmployees")}
           value={employees.length}
           icon={<Users className="size-4.5" />}
           iconClassName="bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
         />
         <StatCard
-          label="Departments"
+          label={t("departments")}
           value={departments.length}
           icon={<Building2 className="size-4.5" />}
           iconClassName="bg-brand-olive/15 text-brand-olive"
@@ -127,7 +129,7 @@ export default function ClientsPage() {
                     </h3>
                     {isActive && (
                       <span className="shrink-0 rounded-full bg-success/12 px-2 py-0.5 text-xs font-medium text-success">
-                        Active
+                        {t("active")}
                       </span>
                     )}
                   </div>
@@ -148,26 +150,26 @@ export default function ClientsPage() {
                   <div className="font-heading text-lg font-semibold text-foreground">
                     {empCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">Employees</div>
+                  <div className="text-xs text-muted-foreground">{t("employees")}</div>
                 </div>
                 <div>
                   <div className="font-heading text-lg font-semibold text-foreground">
                     {deptCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">Departments</div>
+                  <div className="text-xs text-muted-foreground">{t("departments")}</div>
                 </div>
                 <div>
                   <div className="font-heading text-lg font-semibold text-foreground">
                     {payslipCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">Payslips</div>
+                  <div className="text-xs text-muted-foreground">{t("payslips")}</div>
                 </div>
               </div>
 
               <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
                 {isActive ? (
                   <span className="flex flex-1 items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground">
-                    Working here now
+                    {t("workingHereNow")}
                   </span>
                 ) : (
                   <Button
@@ -176,11 +178,11 @@ export default function ClientsPage() {
                     className="flex-1"
                     onClick={() => {
                       setActiveClient(c.id);
-                      toast.add({ title: `Switched to ${c.name}` });
+                      toast.add({ title: t("switchedTo", { name: c.name }) });
                     }}
                   >
                     <Eye className="size-3.5" />
-                    Set active
+                    {t("setActive")}
                   </Button>
                 )}
                 <ClientFormDialog
@@ -192,8 +194,8 @@ export default function ClientsPage() {
                   }
                 />
                 <ConfirmDeleteDialog
-                  title={`Remove ${c.name}?`}
-                  description={`This moves ${c.name} to Trash. Its employees, departments, and payslip history are kept and everything comes back if you restore it.`}
+                  title={t("removeConfirmTitle", { name: c.name })}
+                  description={t("removeConfirmDescription", { name: c.name })}
                   onConfirm={() => handleDelete(c.id, c.name)}
                   trigger={
                     <Button

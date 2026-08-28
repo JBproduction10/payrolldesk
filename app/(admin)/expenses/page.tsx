@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Search, Plus, Pencil, Trash2, Fuel, Wrench, Building2, Package, Zap, CreditCard, Receipt } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { money, formatDate } from "@/lib/format";
@@ -37,17 +38,19 @@ const CATEGORY_ICON: Record<ExpenseCategory, typeof Fuel> = {
   other: Receipt,
 };
 
-const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
-  fuel: "Fuel",
-  credit: "Credit repayment",
-  renovation: "Renovation",
-  supplies: "Supplies",
-  utilities: "Utilities",
-  maintenance: "Maintenance",
-  other: "Other",
+const CATEGORY_LABEL_KEY: Record<ExpenseCategory, "categoryFuel" | "categoryCredit" | "categoryRenovation" | "categorySupplies" | "categoryUtilities" | "categoryMaintenance" | "categoryOther"> = {
+  fuel: "categoryFuel",
+  credit: "categoryCredit",
+  renovation: "categoryRenovation",
+  supplies: "categorySupplies",
+  utilities: "categoryUtilities",
+  maintenance: "categoryMaintenance",
+  other: "categoryOther",
 };
 
 export default function ExpensesPage() {
+  const t = useTranslations("expensesPage");
+  const locale = useLocale() as "en" | "fr";
   const { activeClient, clientExpenses, period, removeExpense } = usePayroll();
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -72,14 +75,14 @@ export default function ExpensesPage() {
   return (
     <>
       <PageHeader
-        title="Expenses"
-        description={`Operating costs for ${activeClient.name}`}
+        title={t("title")}
+        description={t("description", { schoolName: activeClient.name })}
         action={
           <ExpenseFormDialog
             trigger={
               <Button>
                 <Plus className="size-4" />
-                Log Expense
+                {t("logExpense")}
               </Button>
             }
           />
@@ -87,13 +90,13 @@ export default function ExpensesPage() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Entries" value={clientExpenses.length} />
+        <StatCard label={t("entries")} value={clientExpenses.length} />
         <StatCard
-          label="This period"
-          value={money(totalThisPeriod, activeClient.currency)}
+          label={t("thisPeriod")}
+          value={money(totalThisPeriod, activeClient.currency, locale)}
           className="border-brand-clay/30 bg-brand-clay/5"
         />
-        <StatCard label="All time" value={money(totalAllTime, activeClient.currency)} />
+        <StatCard label={t("allTime")} value={money(totalAllTime, activeClient.currency, locale)} />
       </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -102,19 +105,19 @@ export default function ExpensesPage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search expenses…"
+            placeholder={t("searchPlaceholder")}
             className="h-9 pl-9"
           />
         </div>
         <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value ?? "all")}>
           <SelectTrigger className="h-9 w-full sm:w-52">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue placeholder={t("allCategories")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
+            <SelectItem value="all">{t("allCategories")}</SelectItem>
+            {Object.entries(CATEGORY_LABEL_KEY).map(([value, labelKey]) => (
               <SelectItem key={value} value={value}>
-                {label}
+                {t(labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -126,19 +129,19 @@ export default function ExpensesPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Logged by</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("columnDescription")}</TableHead>
+                <TableHead>{t("columnCategory")}</TableHead>
+                <TableHead>{t("columnDate")}</TableHead>
+                <TableHead>{t("columnLoggedBy")}</TableHead>
+                <TableHead>{t("columnAmount")}</TableHead>
+                <TableHead className="text-right">{t("columnActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                    No expenses logged yet.
+                    {t("noExpenses")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -152,17 +155,17 @@ export default function ExpensesPage() {
                       <TableCell>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
                           <Icon className="size-3.5" />
-                          {CATEGORY_LABEL[e.category]}
+                          {t(CATEGORY_LABEL_KEY[e.category])}
                         </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(e.date)}
+                        {formatDate(e.date, locale)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {e.submittedBy}
                       </TableCell>
                       <TableCell className="font-medium text-destructive">
-                        −{money(e.amount, activeClient.currency)}
+                        −{money(e.amount, activeClient.currency, locale)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
@@ -175,8 +178,8 @@ export default function ExpensesPage() {
                             }
                           />
                           <ConfirmDeleteDialog
-                            title="Remove this expense?"
-                            description="This entry will no longer count toward your totals."
+                            title={t("removeConfirmTitle")}
+                            description={t("removeConfirmDescription")}
                             onConfirm={() => removeExpense(e.id)}
                             trigger={
                               <Button

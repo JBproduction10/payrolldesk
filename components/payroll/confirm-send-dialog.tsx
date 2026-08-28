@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Send } from "lucide-react";
 import type { Employee } from "@/lib/types";
 import { money, periodLabel } from "@/lib/format";
@@ -36,6 +37,8 @@ export function ConfirmSendDialog({
   avatarIndex?: number;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("confirmSendDialog");
+  const locale = useLocale() as "en" | "fr";
   const [open, setOpen] = useState(false);
 
   return (
@@ -43,7 +46,7 @@ export function ConfirmSendDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Confirm send</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex items-center justify-between rounded-xl border border-border p-4">
@@ -55,22 +58,22 @@ export function ConfirmSendDialog({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-muted-foreground">Net Pay</div>
-            <div className="font-semibold text-success">{money(netPay, currency)}</div>
+            <div className="text-xs text-muted-foreground">{t("netPay")}</div>
+            <div className="font-semibold text-success">{money(netPay, currency, locale)}</div>
           </div>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Send the {periodLabel(period)} payslip to{" "}
+          {t("sendPrompt", { period: periodLabel(period, locale) })}{" "}
           <span className="font-medium text-foreground">
-            {channels.includes("whatsapp") ? `${employee.email} and WhatsApp` : employee.email}
+            {channels.includes("whatsapp") ? t("andWhatsApp", { email: employee.email }) : employee.email}
           </span>
-          ? This will mark it as delivered.
+          {t("confirmSuffix")}
         </p>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={() => {
@@ -79,7 +82,7 @@ export function ConfirmSendDialog({
             }}
           >
             <Send className="size-3.5" />
-            Confirm Send
+            {t("confirmSend")}
           </Button>
         </DialogFooter>
       </DialogContent>

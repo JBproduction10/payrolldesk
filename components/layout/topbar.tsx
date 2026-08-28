@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Search, Bell, Menu, RotateCcw, LogOut } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { Input } from "@/components/ui/input";
@@ -17,8 +18,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ClientSwitcher } from "./client-switcher";
 import { MobileNav } from "./mobile-nav";
+import { LanguageSwitcher } from "./language-switcher";
 
 export function Topbar() {
+  const t = useTranslations("topbar");
   const { clientEmployees, clientDepartments, resetDemo } = usePayroll();
   const { data: session } = useSession();
   const router = useRouter();
@@ -80,7 +83,7 @@ export function Topbar() {
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
-          placeholder="Search employees, departments…"
+          placeholder={t("searchPlaceholder")}
           className="h-10 rounded-xl bg-muted pl-9"
         />
         {open && query.trim() && (
@@ -89,7 +92,7 @@ export function Topbar() {
               <div className="max-h-72 overflow-y-auto p-1.5">
                 {results.employees.length > 0 && (
                   <div className="px-2 pt-1 pb-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    Employees
+                    {t("employees")}
                   </div>
                 )}
                 {results.employees.map((e) => (
@@ -107,7 +110,7 @@ export function Topbar() {
                 ))}
                 {results.departments.length > 0 && (
                   <div className="px-2 pt-2 pb-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    Departments
+                    {t("departments")}
                   </div>
                 )}
                 {results.departments.map((d) => (
@@ -125,12 +128,14 @@ export function Topbar() {
               </div>
             ) : (
               <div className="px-3 py-3 text-sm text-muted-foreground">
-                No matches for “{query}”
+                {t("noMatches", { query })}
               </div>
             )}
           </div>
         )}
       </div>
+
+      <LanguageSwitcher />
 
       <Button variant="ghost" size="icon" className="relative shrink-0">
         <Bell className="size-5" />
@@ -150,7 +155,7 @@ export function Topbar() {
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem render={<Link href="/clients" />} nativeButton={false}>
-            Manage clients
+            {t("manageClients")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
@@ -158,7 +163,7 @@ export function Topbar() {
             }}
           >
             <RotateCcw className="size-4" />
-            Reset demo data
+            {t("resetDemoData")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -166,7 +171,7 @@ export function Topbar() {
             onClick={() => signOut({ callbackUrl: "/" })}
           >
             <LogOut className="size-4" />
-            Sign out
+            {t("signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

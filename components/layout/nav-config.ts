@@ -16,24 +16,25 @@ import {
 
 export interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
 }
 
+// labelKey values map to the "nav" namespace in messages/*.json
 export const MANAGE_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Gauge },
-  { href: "/employees", label: "Employees", icon: Users },
-  { href: "/departments", label: "Departments", icon: Building2 },
-  { href: "/clients", label: "Clients", icon: Landmark },
-  { href: "/students", label: "Students", icon: GraduationCap },
-  { href: "/expenses", label: "Expenses", icon: Wallet },
+  { href: "/dashboard", labelKey: "dashboard", icon: Gauge },
+  { href: "/employees", labelKey: "employees", icon: Users },
+  { href: "/departments", labelKey: "departments", icon: Building2 },
+  { href: "/clients", labelKey: "clients", icon: Landmark },
+  { href: "/students", labelKey: "students", icon: GraduationCap },
+  { href: "/expenses", labelKey: "expenses", icon: Wallet },
 ];
 
 export const PAYROLL_NAV: NavItem[] = [
-  { href: "/payslips", label: "Payslips", icon: ReceiptText },
-  { href: "/send-payslips", label: "Send Payslips", icon: Send },
-  { href: "/field-designer", label: "Field Designer", icon: SlidersHorizontal },
-  { href: "/team", label: "Team & Access", icon: UserCog },
-  { href: "/audit", label: "Audit Log", icon: History },
-  { href: "/settings/email", label: "Email Settings", icon: Mail },
+  { href: "/payslips", labelKey: "payslips", icon: ReceiptText },
+  { href: "/send-payslips", labelKey: "sendPayslips", icon: Send },
+  { href: "/field-designer", labelKey: "fieldDesigner", icon: SlidersHorizontal },
+  { href: "/team", labelKey: "teamAccess", icon: UserCog },
+  { href: "/audit", labelKey: "auditLog", icon: History },
+  { href: "/settings/email", labelKey: "emailSettings", icon: Mail },
 ];

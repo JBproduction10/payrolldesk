@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Trash2, Undo2 } from "lucide-react";
 import { timeAgo } from "@/lib/format";
 import { toast } from "@/components/ui/toast";
@@ -40,6 +41,8 @@ export function TrashDialog({
   rows: TrashRow[];
   onRestore: (id: string) => void;
 }) {
+  const t = useTranslations("trash");
+  const locale = useLocale() as "en" | "fr";
   const [open, setOpen] = useState(false);
 
   return (
@@ -51,9 +54,7 @@ export function TrashDialog({
             <Trash2 className="size-4 text-muted-foreground" />
             {title}
           </DialogTitle>
-          <DialogDescription>
-            Deleted records stay here until you restore them — nothing is erased.
-          </DialogDescription>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         {rows.length === 0 ? (
@@ -69,7 +70,7 @@ export function TrashDialog({
                   <div className="truncate font-medium text-foreground">{row.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {row.meta ? `${row.meta} · ` : ""}
-                    {row.deletedAt ? `deleted ${timeAgo(row.deletedAt)}` : "deleted"}
+                    {row.deletedAt ? t("deletedAgo", { time: timeAgo(row.deletedAt, locale) }) : t("deleted")}
                   </div>
                 </div>
                 <Button
@@ -77,11 +78,11 @@ export function TrashDialog({
                   size="sm"
                   onClick={() => {
                     onRestore(row.id);
-                    toast.add({ title: `Restored ${row.name}`, type: "success" });
+                    toast.add({ title: t("restoredToast", { name: row.name }), type: "success" });
                   }}
                 >
                   <Undo2 data-icon="inline-start" />
-                  Restore
+                  {t("restore")}
                 </Button>
               </div>
             ))}

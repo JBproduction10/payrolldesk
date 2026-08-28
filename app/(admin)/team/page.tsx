@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Trash2, UserCog, Send, Check, Copy, Pencil, Download } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import type { Role } from "@/lib/types";
@@ -27,18 +28,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const ROLE_LABEL: Record<Role, string> = {
-  super_admin: "Super admin",
-  promoter: "Promoter",
-  school_admin: "School admin",
-  teacher: "Teacher",
-  finance: "Finance staff",
-  treasury: "Treasury",
-  cashier: "Cashier",
-  intendance: "Intendance",
+const ROLE_LABEL_KEY: Record<Role, string> = {
+  super_admin: "roleSuperAdmin",
+  promoter: "rolePromoter",
+  school_admin: "roleSchoolAdmin",
+  teacher: "roleTeacher",
+  finance: "roleFinance",
+  treasury: "roleTreasury",
+  cashier: "roleCashier",
+  intendance: "roleIntendance",
 };
 
 export default function TeamPage() {
+  const t = useTranslations("teamPage");
   const { clients, employees } = usePayroll();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,11 +54,11 @@ export default function TeamPage() {
       const data = await res.json();
       if (res.ok) setMembers(data.members);
     } catch {
-      toast.add({ title: "Couldn't load your team", type: "error" });
+      toast.add({ title: t("loadErrorToast"), type: "error" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -66,10 +68,10 @@ export default function TeamPage() {
     const res = await fetch(`/api/team/${id}`, { method: "DELETE" });
     if (res.ok) {
       setMembers((m) => m.filter((x) => x.id !== id));
-      toast.add({ title: "Account removed", type: "success" });
+      toast.add({ title: t("accountRemovedToast"), type: "success" });
     } else {
       const data = await res.json().catch(() => ({}));
-      toast.add({ title: data.error || "Could not remove that account", type: "error" });
+      toast.add({ title: data.error || t("removeErrorToast"), type: "error" });
     }
   }
 
@@ -77,11 +79,11 @@ export default function TeamPage() {
     const res = await fetch(`/api/team/${member.id}`, { method: "POST" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.add({ title: data.error || "Could not resend the invite", type: "error" });
+      toast.add({ title: data.error || t("resendErrorToast"), type: "error" });
       return;
     }
     if (data.inviteSent) {
-      toast.add({ title: `Invite resent to ${member.email}`, type: "success" });
+      toast.add({ title: t("inviteResentToast", { email: member.email }), type: "success" });
     } else {
       setResendLink({ email: member.email, link: data.inviteLink });
     }
@@ -94,20 +96,20 @@ export default function TeamPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.add({ title: "Could not copy — select and copy the link manually", type: "error" });
+      toast.add({ title: t("copyErrorToast"), type: "error" });
     }
   }
 
   const clientName = (id: string | null) =>
-    id ? clients.find((c) => c.id === id)?.name ?? "—" : "All schools";
+    id ? clients.find((c) => c.id === id)?.name ?? "—" : t("allSchools");
   const employeeName = (id: string | null) =>
     id ? employees.find((e) => e.id === id)?.name ?? "—" : "—";
 
   return (
     <>
       <PageHeader
-        title="Team & Access"
-        description="Give the promoter, school admins, teachers and finance staff their own logins"
+        title={t("title")}
+        description={t("description")}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -116,7 +118,7 @@ export default function TeamPage() {
               render={
                 <a href="/api/export" download>
                   <Download className="size-4" />
-                  Download full backup
+                  {t("downloadBackup")}
                 </a>
               }
             />
@@ -130,13 +132,9 @@ export default function TeamPage() {
           <UserCog className="size-4.5" />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">How access works</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("howAccessWorksTitle")}</h3>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Everyone you add here gets an email invite to set their own password — there's
-            no signup page, so this is the only way in. A promoter sees a read-only balance
-            sheet across every school, a school admin manages students & expenses for one
-            school, finance staff can view and print all payslips for one school, and a
-            teacher only ever sees their own payslips.
+            {t("howAccessWorksBody")}
           </p>
         </div>
       </div>
@@ -146,25 +144,25 @@ export default function TeamPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Linked employee</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("columnName")}</TableHead>
+                <TableHead>{t("columnRole")}</TableHead>
+                <TableHead>{t("columnSchool")}</TableHead>
+                <TableHead>{t("columnLinkedEmployee")}</TableHead>
+                <TableHead>{t("columnStatus")}</TableHead>
+                <TableHead className="text-right">{t("columnActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                    Loading team…
+                    {t("loadingTeam")}
                   </TableCell>
                 </TableRow>
               ) : members.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                    No team members yet — add your promoter, school admins or teachers above.
+                    {t("noTeamYet")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -176,7 +174,7 @@ export default function TeamPage() {
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
-                        {ROLE_LABEL[m.role]}
+                        {t(ROLE_LABEL_KEY[m.role])}
                       </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -193,7 +191,7 @@ export default function TeamPage() {
                             : "bg-brand-gold/20 text-[oklch(0.42_0.09_70)]"
                         }`}
                       >
-                        {m.status === "active" ? "Active" : "Invite pending"}
+                        {m.status === "active" ? t("active") : t("invitePending")}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -203,7 +201,7 @@ export default function TeamPage() {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleResend(m)}
-                            aria-label="Resend invite"
+                            aria-label={t("resendInvite")}
                           >
                             <Send className="size-3.5" />
                           </Button>
@@ -212,14 +210,14 @@ export default function TeamPage() {
                           member={m}
                           onSaved={load}
                           trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label="Edit">
+                            <Button variant="ghost" size="icon-sm" aria-label={t("edit")}>
                               <Pencil className="size-3.5" />
                             </Button>
                           }
                         />
                         <ConfirmDeleteDialog
-                          title={`Remove ${m.name}?`}
-                          description="They'll no longer be able to sign in."
+                          title={t("removeConfirmTitle", { name: m.name })}
+                          description={t("removeConfirmDescription")}
                           onConfirm={() => handleDelete(m.id)}
                           trigger={
                             <Button
@@ -244,10 +242,9 @@ export default function TeamPage() {
       <Dialog open={Boolean(resendLink)} onOpenChange={(next) => !next && setResendLink(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Invite link ready</DialogTitle>
+            <DialogTitle>{t("inviteLinkReadyTitle")}</DialogTitle>
             <DialogDescription>
-              Email delivery isn't configured — copy this link and send it to{" "}
-              {resendLink?.email} yourself.
+              {t("inviteLinkReadyDescription", { email: resendLink?.email ?? "" })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-2">
@@ -257,7 +254,7 @@ export default function TeamPage() {
             </Button>
           </div>
           <DialogFooter>
-            <Button onClick={() => setResendLink(null)}>Done</Button>
+            <Button onClick={() => setResendLink(null)}>{t("done")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

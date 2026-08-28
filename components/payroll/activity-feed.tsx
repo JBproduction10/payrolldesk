@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations, useLocale } from "next-intl";
 import {
   FileText,
   UserPlus,
@@ -57,28 +60,30 @@ export function ActivityFeed({
   limit?: number;
   viewAllHref?: string;
 }) {
+  const t = useTranslations("dashboardWidgets");
+  const locale = useLocale() as "en" | "fr";
   const items = logs.slice(0, limit);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-heading text-base font-semibold text-foreground">
-          Recent Activity
+          {t("recentActivity")}
         </h3>
         {viewAllHref ? (
           <a
             href={viewAllHref}
             className="text-xs font-medium text-primary hover:underline"
           >
-            View audit log →
+            {t("viewAuditLog")}
           </a>
         ) : (
-          <span className="text-xs text-muted-foreground">{logs.length} total</span>
+          <span className="text-xs text-muted-foreground">{t("totalCount", { count: logs.length })}</span>
         )}
       </div>
       {items.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Nothing has happened yet — actions you take will show up here.
+          {t("noActivityYet")}
         </p>
       ) : (
         <ul className="flex flex-col gap-4">
@@ -94,8 +99,8 @@ export function ActivityFeed({
                 <div className="min-w-0 leading-snug">
                   <p className="text-sm text-foreground">{log.message}</p>
                   <p className="text-xs text-muted-foreground">
-                    {timeAgo(log.at)}
-                    {log.actor ? ` · by ${log.actor.name}` : ""}
+                    {timeAgo(log.at, locale)}
+                    {log.actor ? t("byActor", { name: log.actor.name }) : ""}
                   </p>
                 </div>
               </li>

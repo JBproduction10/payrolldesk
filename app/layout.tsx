@@ -3,6 +3,8 @@ import "./globals.css";
 import ClientBody from "./ClientBody";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 export const metadata: Metadata = {
   title: "Payroll Desk — Multi-client payroll operations",
@@ -16,13 +18,17 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getServerSession(authOptions);
+  const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className="antialiased font-sans" suppressHydrationWarning>
-        <ClientBody session={session}>
-          {children}
-        </ClientBody>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ClientBody session={session}>
+            {children}
+          </ClientBody>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

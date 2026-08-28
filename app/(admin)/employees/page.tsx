@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Search, Plus, Pencil, Trash2, Mail, Phone } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { money } from "@/lib/format";
@@ -34,14 +35,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const STATUS_TABS: { key: "all" | EmployeeStatus; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "active", label: "Active" },
-  { key: "leave", label: "On Leave" },
-  { key: "inactive", label: "Inactive" },
+const STATUS_TABS: { key: "all" | EmployeeStatus; labelKey: "statusAll" | "statusActive" | "statusLeave" | "statusInactive" }[] = [
+  { key: "all", labelKey: "statusAll" },
+  { key: "active", labelKey: "statusActive" },
+  { key: "leave", labelKey: "statusLeave" },
+  { key: "inactive", labelKey: "statusInactive" },
 ];
 
 export default function EmployeesPage() {
+  const t = useTranslations("employeesPage");
+  const locale = useLocale() as "en" | "fr";
   const {
     activeClient,
     clientEmployees,
@@ -77,10 +80,10 @@ export default function EmployeesPage() {
   function handleDelete(id: string, name: string) {
     removeEmployee(id);
     toast.add({
-      title: `Removed ${name}`,
+      title: t("removedToast", { name }),
       type: "success",
       actionProps: {
-        children: "Undo",
+        children: t("undo"),
         onClick: () => restoreEmployee(id),
       },
     });
@@ -89,20 +92,20 @@ export default function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Employees"
-        description={`${clientEmployees.length} employees across ${clientDepartments.length} departments`}
+        title={t("title")}
+        description={t("description", { count: clientEmployees.length, deptCount: clientDepartments.length })}
         action={
           <div className="flex items-center gap-2">
             <TrashDialog
               trigger={
                 <Button variant="outline">
                   <Trash2 className="size-4" />
-                  Trash
+                  {t("trash")}
                   {deletedEmployees.length > 0 ? ` (${deletedEmployees.length})` : ""}
                 </Button>
               }
-              title="Deleted employees"
-              emptyLabel="No deleted employees for this school."
+              title={t("deletedEmployeesTitle")}
+              emptyLabel={t("noDeletedEmployees")}
               rows={deletedEmployees.map((e) => ({
                 id: e.id,
                 name: e.name,
@@ -116,7 +119,7 @@ export default function EmployeesPage() {
               trigger={
                 <Button>
                   <Plus className="size-4" />
-                  Add Employee
+                  {t("addEmployee")}
                 </Button>
               }
             />
@@ -133,7 +136,7 @@ export default function EmployeesPage() {
               setQuery(e.target.value);
               resetPage();
             }}
-            placeholder="Search name, email, role…"
+            placeholder={t("searchPlaceholder")}
             className="h-9 pl-9"
           />
         </div>
@@ -146,10 +149,10 @@ export default function EmployeesPage() {
           }}
         >
           <SelectTrigger className="h-9 w-full sm:w-52">
-            <SelectValue placeholder="All Departments" />
+            <SelectValue placeholder={t("allDepartments")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
+            <SelectItem value="all">{t("allDepartments")}</SelectItem>
             {clientDepartments.map((d) => (
               <SelectItem key={d.id} value={d.id}>
                 {d.name}
@@ -172,7 +175,7 @@ export default function EmployeesPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </div>
@@ -183,19 +186,19 @@ export default function EmployeesPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Employee</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Base Salary</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("columnEmployee")}</TableHead>
+                <TableHead>{t("columnDepartment")}</TableHead>
+                <TableHead>{t("columnEmail")}</TableHead>
+                <TableHead>{t("columnSalary")}</TableHead>
+                <TableHead>{t("columnStatus")}</TableHead>
+                <TableHead className="text-right">{t("columnActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                    No employees match your filters.
+                    {t("noResults")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -232,7 +235,7 @@ export default function EmployeesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium text-foreground">
-                      {money(e.baseSalary, activeClient.currency)}
+                      {money(e.baseSalary, activeClient.currency, locale)}
                     </TableCell>
                     <TableCell>
                       <EmployeeStatusBadge status={e.status} />
@@ -248,8 +251,8 @@ export default function EmployeesPage() {
                           }
                         />
                         <ConfirmDeleteDialog
-                          title={`Remove ${e.name}?`}
-                          description="This moves the employee to Trash. Payslips already generated for them are kept, and you can restore them anytime."
+                          title={t("removeConfirmTitle", { name: e.name })}
+                          description={t("removeConfirmDescription")}
                           onConfirm={() => handleDelete(e.id, e.name)}
                           trigger={
                             <Button
@@ -276,7 +279,7 @@ export default function EmployeesPage() {
           to={to}
           total={total}
           onPageChange={setPage}
-          itemLabel="employees"
+          itemLabel={t("itemLabel")}
         />
       </div>
     </>

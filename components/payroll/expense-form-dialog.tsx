@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { usePayroll } from "@/lib/store";
 import type { Expense, ExpenseCategory } from "@/lib/types";
 import { toast } from "@/components/ui/toast";
@@ -19,14 +20,14 @@ import {
 } from "@/components/ui/dialog";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 
-const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: "fuel", label: "Fuel" },
-  { value: "credit", label: "Credit repayment" },
-  { value: "renovation", label: "Renovation" },
-  { value: "supplies", label: "Supplies" },
-  { value: "utilities", label: "Utilities" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "other", label: "Other" },
+const CATEGORY_KEYS: { value: ExpenseCategory; labelKey: string }[] = [
+  { value: "fuel", labelKey: "categoryFuel" },
+  { value: "credit", labelKey: "categoryCredit" },
+  { value: "renovation", labelKey: "categoryRenovation" },
+  { value: "supplies", labelKey: "categorySupplies" },
+  { value: "utilities", labelKey: "categoryUtilities" },
+  { value: "maintenance", labelKey: "categoryMaintenance" },
+  { value: "other", labelKey: "categoryOther" },
 ];
 
 interface FormState {
@@ -52,6 +53,8 @@ export function ExpenseFormDialog({
   trigger: ReactElement;
   expense?: Expense;
 }) {
+  const t = useTranslations("expenseForm");
+  const tCat = useTranslations("expensesPage");
   const { activeClient, addExpense, updateExpense } = usePayroll();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
@@ -83,16 +86,16 @@ export function ExpenseFormDialog({
         amount: Number(form.amount),
         date: form.date,
       });
-      toast.add({ title: "Expense updated", type: "success" });
+      toast.add({ title: t("updatedToast"), type: "success" });
     } else {
       addExpense({
         category: form.category,
         description: form.description.trim(),
         amount: Number(form.amount),
         date: form.date,
-        submittedBy: session?.user?.name ?? "Admin",
+        submittedBy: session?.user?.name ?? t("defaultSubmitter"),
       });
-      toast.add({ title: "Expense logged", type: "success" });
+      toast.add({ title: t("loggedToast"), type: "success" });
     }
     setOpen(false);
   }
@@ -102,20 +105,20 @@ export function ExpenseFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Expense" : "Log Expense"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this expense entry."
-              : `Record a school running cost for ${activeClient.name}.`}
+              ? t("editDescription")
+              : t("addDescription", { schoolName: activeClient.name })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="xf-desc">Description *</Label>
+            <Label htmlFor="xf-desc">{t("description")}</Label>
             <Input
               id="xf-desc"
-              placeholder="e.g. Generator fuel top-up"
+              placeholder={t("descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
@@ -123,7 +126,7 @@ export function ExpenseFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="xf-category">Category</Label>
+              <Label htmlFor="xf-category">{t("category")}</Label>
               <NativeSelect
                 id="xf-category"
                 className="w-full"
@@ -132,20 +135,20 @@ export function ExpenseFormDialog({
                   setForm((f) => ({ ...f, category: e.target.value as ExpenseCategory }))
                 }
               >
-                {CATEGORIES.map((c) => (
+                {CATEGORY_KEYS.map((c) => (
                   <NativeSelectOption key={c.value} value={c.value}>
-                    {c.label}
+                    {tCat(c.labelKey)}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="xf-amount">Amount ({activeClient.currency}) *</Label>
+              <Label htmlFor="xf-amount">{t("amount", { currency: activeClient.currency })}</Label>
               <Input
                 id="xf-amount"
                 type="number"
                 min={0}
-                placeholder="e.g. 150"
+                placeholder={t("amountPlaceholder")}
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               />
@@ -153,7 +156,7 @@ export function ExpenseFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="xf-date">Date *</Label>
+            <Label htmlFor="xf-date">{t("date")}</Label>
             <Input
               id="xf-date"
               type="date"
@@ -165,10 +168,10 @@ export function ExpenseFormDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid}>
-            {isEdit ? "Save Changes" : "Log Expense"}
+            {isEdit ? t("saveChanges") : t("logExpense")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Send, Sparkles, Info } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import type { Channel, Employee, Payslip } from "@/lib/types";
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/table";
 
 export default function SendPayslipsPage() {
+  const t = useTranslations("sendPayslipsPage");
+  const locale = useLocale() as "en" | "fr";
   const {
     activeClient,
     period,
@@ -65,7 +68,7 @@ export default function SendPayslipsPage() {
                 to: employee.email,
                 employeeName: employee.name,
                 schoolName: activeClient.name,
-                periodLabel: periodLabel(payslip.period),
+                periodLabel: periodLabel(payslip.period, locale),
                 currency: activeClient.currency,
                 earnings: payslip.lines
                   .filter((l) => l.category === "earning")
@@ -102,8 +105,8 @@ export default function SendPayslipsPage() {
       const allSent = results.every((r) => r.sent);
       toast.add({
         title: allSent
-          ? `Delivered payslip to ${employee.name}`
-          : `Some channels failed for ${employee.name}`,
+          ? t("deliveredToast", { name: employee.name })
+          : t("someFailedToast", { name: employee.name }),
         type: allSent ? "success" : "error",
       });
     }
@@ -112,24 +115,24 @@ export default function SendPayslipsPage() {
   async function sendAll() {
     if (pending.length === 0) return;
     toast.add({
-      title: `Sending ${pending.length} payslips…`,
-      description: "Delivering by email — WhatsApp is still simulated",
+      title: t("sendingToast", { count: pending.length }),
+      description: t("sendingDescription"),
       type: "info",
     });
     await Promise.all(pending.map((r) => sendOne(r.payslip, r.employee, true)));
-    toast.add({ title: "Finished sending payslips", type: "success" });
+    toast.add({ title: t("finishedToast"), type: "success" });
   }
 
   return (
     <>
       <PageHeader
-        title="Send Payslips"
-        description={`Deliver ${periodLabel(period)} payslips to your team`}
+        title={t("title")}
+        description={t("description", { period: periodLabel(period, locale) })}
         action={
           rows.length > 0 && (
             <Button onClick={sendAll} disabled={pending.length === 0}>
               <Send className="size-4" />
-              Send All Drafts
+              {t("sendAllDrafts")}
               <span className="ml-1 rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-xs">
                 {pending.length}
               </span>
@@ -144,55 +147,52 @@ export default function SendPayslipsPage() {
         </span>
         <div>
           <h3 className="text-sm font-semibold text-foreground">
-            Email delivery is live — WhatsApp is still simulated
+            {t("infoTitle")}
           </h3>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Payslips are actually emailed when <code>RESEND_API_KEY</code> is configured
-            (otherwise they're logged to the server console instead of failing silently).
-            WhatsApp delivery will show as sent here, but nothing is sent for real until
-            the WhatsApp Business API is connected.
+            {t("infoBody")}
           </p>
         </div>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Ready to send" value={pending.length} trend={<span>draft payslips</span>} />
+        <StatCard label={t("readyToSend")} value={pending.length} trend={<span>{t("draftPayslips")}</span>} />
         <StatCard
-          label="Net payable pending"
-          value={money(netPending, activeClient.currency)}
-          trend={<span>to be delivered</span>}
+          label={t("netPayablePending")}
+          value={money(netPending, activeClient.currency, locale)}
+          trend={<span>{t("toBeDelivered")}</span>}
         />
-        <StatCard label="Delivered" value={deliveredCount} trend={<span>payslips sent</span>} />
+        <StatCard label={t("delivered")} value={deliveredCount} trend={<span>{t("payslipsSent")}</span>} />
       </div>
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
           <Sparkles className="size-8 text-brand-gold" />
           <p className="text-sm text-muted-foreground">
-            No payslips to send yet for {periodLabel(period)}.
+            {t("noPayslipsYet", { period: periodLabel(period, locale) })}
           </p>
-          <GeneratePayslipsDialog trigger={<Button>Generate Payslips</Button>} />
+          <GeneratePayslipsDialog trigger={<Button>{t("generatePayslips")}</Button>} />
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           <div className="mb-0 flex items-center justify-between px-5 pt-5">
             <h3 className="font-heading text-base font-semibold text-foreground">
-              Ready to send
+              {t("readyToSend")}
             </h3>
             <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {pending.length} pending
+              {t("pending", { count: pending.length })}
             </span>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Net Pay</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Channels</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t("columnEmployee")}</TableHead>
+                  <TableHead>{t("columnDepartment")}</TableHead>
+                  <TableHead>{t("columnNetPay")}</TableHead>
+                  <TableHead>{t("columnEmail")}</TableHead>
+                  <TableHead>{t("columnChannels")}</TableHead>
+                  <TableHead className="text-right">{t("columnAction")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -218,7 +218,7 @@ export default function SendPayslipsPage() {
                         {deptName(employee.departmentId)}
                       </TableCell>
                       <TableCell className="font-medium text-foreground">
-                        {money(payslip.net, activeClient.currency)}
+                        {money(payslip.net, activeClient.currency, locale)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {employee.email}
@@ -228,7 +228,7 @@ export default function SendPayslipsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {isSent ? (
-                          <span className="text-xs font-medium text-success">Delivered</span>
+                          <span className="text-xs font-medium text-success">{t("delivered")}</span>
                         ) : (
                           <ConfirmSendDialog
                             employee={employee}
@@ -241,7 +241,7 @@ export default function SendPayslipsPage() {
                             trigger={
                               <Button size="sm" disabled={isSending}>
                                 <Send className="size-3.5" />
-                                {isSending ? "Sending…" : "Send"}
+                                {isSending ? t("sending") : t("send")}
                               </Button>
                             }
                           />

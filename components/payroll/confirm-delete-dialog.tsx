@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -17,7 +18,7 @@ export function ConfirmDeleteDialog({
   trigger,
   title,
   description,
-  confirmLabel = "Delete",
+  confirmLabel,
   onConfirm,
 }: {
   trigger: ReactElement;
@@ -26,6 +27,7 @@ export function ConfirmDeleteDialog({
   confirmLabel?: string;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,7 +39,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => {
@@ -45,7 +47,7 @@ export function ConfirmDeleteDialog({
               setOpen(false);
             }}
           >
-            {confirmLabel}
+            {confirmLabel ?? t("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
