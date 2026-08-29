@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { AuthCard } from "@/components/auth/auth-card";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("auth.forgotPassword");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -32,30 +34,23 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <AuthCard
-        title="Check your email"
-        description="If an account exists for that address, we've sent password reset instructions."
-      >
+      <AuthCard title={t("sentTitle")} description={t("sentDescription")}>
         <div className="flex items-start gap-2 rounded-lg bg-secondary px-3 py-2.5 text-sm text-secondary-foreground">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-          The reset link is valid for 7 days. If it doesn't arrive, check your spam
-          folder or ask your administrator to resend your invite instead.
+          {t("sentBody")}
         </div>
         <Button className="mt-4 w-full" render={<Link href="/login" />} nativeButton={false}>
-          Back to sign in
+          {t("backToSignIn")}
         </Button>
       </AuthCard>
     );
   }
 
   return (
-    <AuthCard
-      title="Forgot your password?"
-      description="Enter your email and we'll send you a link to reset it."
-    >
+    <AuthCard title={t("title")} description={t("description")}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="fp-email">Email</Label>
+          <Label htmlFor="fp-email">{t("emailLabel")}</Label>
           <Input
             id="fp-email"
             type="email"
@@ -63,13 +58,13 @@ export default function ForgotPasswordPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
+            placeholder={t("emailPlaceholder")}
           />
         </div>
 
         <Button type="submit" className="mt-2" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" />}
-          Send reset link
+          {t("submit")}
         </Button>
       </form>
     </AuthCard>

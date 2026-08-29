@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 function ResetPasswordForm() {
+  const t = useTranslations("auth.resetPassword");
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -27,7 +29,7 @@ function ResetPasswordForm() {
 
   useEffect(() => {
     if (!token) {
-      setCheckError("Missing reset link.");
+      setCheckError(t("missingLink"));
       setChecking(false);
       return;
     }
@@ -37,20 +39,21 @@ function ResetPasswordForm() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
-          setCheckError(data.error || "This reset link is invalid or has expired.");
+          setCheckError(data.error || t("expiredOrInvalid"));
           return;
         }
         setAccount(data);
       })
-      .catch(() => setCheckError("Couldn't reach the server."))
+      .catch(() => setCheckError(t("couldNotReachServer")))
       .finally(() => setChecking(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     if (password !== confirm) {
-      setError("Passwords don't match.");
+      setError(t("passwordsDontMatch"));
       return;
     }
     setLoading(true);
@@ -62,7 +65,7 @@ function ResetPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not reset your password.");
+        setError(data.error || t("errorResetFailed"));
         setLoading(false);
         return;
       }
@@ -79,14 +82,14 @@ function ResetPasswordForm() {
       router.push(destination);
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("errorGeneric"));
       setLoading(false);
     }
   }
 
   if (checking) {
     return (
-      <AuthCard title="Checking your link…" description="One moment.">
+      <AuthCard title={t("checkingTitle")} description={t("checkingDescription")}>
         <div className="flex justify-center py-4 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
@@ -97,18 +100,18 @@ function ResetPasswordForm() {
   if (checkError || !account) {
     return (
       <AuthCard
-        title="Reset link not valid"
-        description={checkError ?? "This link isn't valid."}
+        title={t("invalidTitle")}
+        description={checkError ?? t("invalidDescriptionFallback")}
       >
         <Button className="w-full" onClick={() => router.push("/forgot-password")}>
-          Request a new link
+          {t("requestNewLink")}
         </Button>
       </AuthCard>
     );
   }
 
   return (
-    <AuthCard title="Reset your password" description={`For ${account.email}`}>
+    <AuthCard title={t("title")} description={t("descriptionFor", { email: account.email })}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
           <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -118,7 +121,7 @@ function ResetPasswordForm() {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rp-password">New password</Label>
+          <Label htmlFor="rp-password">{t("newPasswordLabel")}</Label>
           <Input
             id="rp-password"
             type="password"
@@ -127,12 +130,12 @@ function ResetPasswordForm() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
+            placeholder={t("passwordPlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rp-confirm">Confirm new password</Label>
+          <Label htmlFor="rp-confirm">{t("confirmPasswordLabel")}</Label>
           <Input
             id="rp-confirm"
             type="password"
@@ -146,7 +149,7 @@ function ResetPasswordForm() {
 
         <Button type="submit" className="mt-2" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" />}
-          Reset password & sign in
+          {t("submit")}
         </Button>
       </form>
     </AuthCard>

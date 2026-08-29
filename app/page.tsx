@@ -10,58 +10,59 @@ import {
   Check,
 } from "lucide-react";
 import { getServerSession } from "next-auth";
+import { getTranslations } from "next-intl/server";
 import { authOptions } from "@/auth";
 import { Button } from "@/components/ui/button";
-
-const FEATURES = [
-  {
-    icon: Landmark,
-    title: "Run payroll for every client",
-    description:
-      "Switch between client workspaces in one click — each with its own employees, departments, currency and pay day.",
-    tone: "bg-brand-pine/12 text-brand-pine",
-  },
-  {
-    icon: SlidersHorizontal,
-    title: "Design your own payslip fields",
-    description:
-      "Add earnings, deductions and info fields as fixed amounts, percentages, or per-employee values — scoped to specific departments if you like.",
-    tone: "bg-brand-gold/20 text-[oklch(0.42_0.09_70)]",
-  },
-  {
-    icon: Users,
-    title: "Group staff by department",
-    description:
-      "Organise employees into departments with heads, headcounts and live payroll totals for each team.",
-    tone: "bg-brand-olive/15 text-brand-olive",
-  },
-  {
-    icon: Sparkles,
-    title: "Generate payslips in one click",
-    description:
-      "Pick a pay period and generate draft payslips for every active employee, calculated automatically from your field designer.",
-    tone: "bg-brand-clay/15 text-brand-clay",
-  },
-  {
-    icon: Send,
-    title: "Deliver by email or WhatsApp",
-    description:
-      "Send payslips individually or all at once, by email and WhatsApp, and track delivery status per employee.",
-    tone: "bg-brand-pine-mid/15 text-brand-pine-mid",
-  },
-  {
-    icon: ReceiptText,
-    title: "Your data, your account",
-    description:
-      "Every workspace is saved to your own account and backed by a real database — sign in from anywhere to pick up where you left off.",
-    tone: "bg-brand-pine-deep/12 text-brand-pine-deep",
-  },
-];
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions);
   const signedIn = Boolean(session?.user);
+  const t = await getTranslations("landingPage");
 
+  const FEATURES = [
+    {
+      icon: Landmark,
+      title: t("feature1Title"),
+      description: t("feature1Description"),
+      tone: "bg-brand-pine/12 text-brand-pine",
+    },
+    {
+      icon: SlidersHorizontal,
+      title: t("feature2Title"),
+      description: t("feature2Description"),
+      tone: "bg-brand-gold/20 text-[oklch(0.42_0.09_70)]",
+    },
+    {
+      icon: Users,
+      title: t("feature3Title"),
+      description: t("feature3Description"),
+      tone: "bg-brand-olive/15 text-brand-olive",
+    },
+    {
+      icon: Sparkles,
+      title: t("feature4Title"),
+      description: t("feature4Description"),
+      tone: "bg-brand-clay/15 text-brand-clay",
+    },
+    {
+      icon: Send,
+      title: t("feature5Title"),
+      description: t("feature5Description"),
+      tone: "bg-brand-pine-mid/15 text-brand-pine-mid",
+    },
+    {
+      icon: ReceiptText,
+      title: t("feature6Title"),
+      description: t("feature6Description"),
+      tone: "bg-brand-pine-deep/12 text-brand-pine-deep",
+    },
+  ];
+
+  const TRUST_BADGES = [
+    t("trustInviteOnly"),
+    t("trustOwnDatabase"),
+    t("trustOneWorkspace"),
+  ];
 
   return (
     <div className="min-h-dvh bg-background">
@@ -77,11 +78,11 @@ export default async function LandingPage() {
         <div className="flex items-center gap-2">
           {signedIn ? (
             <Button render={<Link href="/dashboard" />} nativeButton={false}>
-              Go to dashboard
+              {t("goToDashboard")}
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button render={<Link href="/login" />} nativeButton={false}>Sign in</Button>
+            <Button render={<Link href="/login" />} nativeButton={false}>{t("signIn")}</Button>
           )}
         </div>
       </header>
@@ -90,31 +91,27 @@ export default async function LandingPage() {
         <section className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-24">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
             <Sparkles className="size-3.5" />
-            Built for payroll teams serving multiple clients
+            {t("badge")}
           </span>
           <h1 className="mt-6 font-heading text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            One desk to run payroll for every client you serve
+            {t("heroTitle")}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-            Design your own payslip fields, group employees by department, generate
-            payslips automatically, and deliver them by email or WhatsApp — all from
-            one clean, multi-client workspace.
+            {t("heroDescription")}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button size="lg" render={<Link href={signedIn ? "/dashboard" : "/login"} />} nativeButton={false}>
-              {signedIn ? "Go to dashboard" : "Sign in"}
+              {signedIn ? t("goToDashboard") : t("signIn")}
               <ArrowRight className="size-4" />
             </Button>
           </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            {["Invite-only access", "Backed by your own database", "One workspace, every school"].map(
-              (item) => (
-                <span key={item} className="flex items-center gap-1.5">
-                  <Check className="size-4 text-success" />
-                  {item}
-                </span>
-              ),
-            )}
+            {TRUST_BADGES.map((item) => (
+              <span key={item} className="flex items-center gap-1.5">
+                <Check className="size-4 text-success" />
+                {item}
+              </span>
+            ))}
           </div>
         </section>
 
@@ -144,13 +141,13 @@ export default async function LandingPage() {
         <section className="border-t border-border bg-secondary/40">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 py-16 text-center sm:px-6">
             <h2 className="font-heading text-2xl font-semibold text-foreground sm:text-3xl">
-              Ready to simplify payroll for every client you run?
+              {t("ctaTitle")}
             </h2>
             <p className="max-w-xl text-muted-foreground">
-              Access is by invite only — your administrator adds you and you're in.
+              {t("ctaDescription")}
             </p>
             <Button size="lg" render={<Link href={signedIn ? "/dashboard" : "/login"} />} nativeButton={false}>
-              {signedIn ? "Go to dashboard" : "Sign in"}
+              {signedIn ? t("goToDashboard") : t("signIn")}
               <ArrowRight className="size-4" />
             </Button>
           </div>
@@ -158,8 +155,7 @@ export default async function LandingPage() {
       </main>
 
       <footer className="mx-auto max-w-6xl px-4 py-8 text-center text-xs text-muted-foreground sm:px-6">
-        © {new Date().getFullYear()} Payroll Desk. Built for teams running payroll for
-        multiple clients.
+        {t("footer", { year: new Date().getFullYear() })}
       </footer>
     </div>
   );

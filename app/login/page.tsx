@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo-accounts";
 
 function LoginForm() {
+  const t = useTranslations("auth.login");
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -30,13 +32,13 @@ function LoginForm() {
         redirect: false,
       });
       if (res?.error) {
-        setError("Incorrect email or password.");
+        setError(t("errorIncorrect"));
         return;
       }
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("errorGeneric"));
     }
   }
 
@@ -57,9 +59,9 @@ function LoginForm() {
 
   return (
     <AuthCard
-      title="Sign in"
-      description="Welcome back — sign in to your payroll workspace."
-      footer="Don't have access yet? Ask your administrator to add you — you'll get an email invite."
+      title={t("title")}
+      description={t("description")}
+      footer={t("footer")}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
@@ -70,7 +72,7 @@ function LoginForm() {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="login-email">Email</Label>
+          <Label htmlFor="login-email">{t("emailLabel")}</Label>
           <Input
             id="login-email"
             type="email"
@@ -78,18 +80,18 @@ function LoginForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
+            placeholder={t("emailPlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="login-password">Password</Label>
+            <Label htmlFor="login-password">{t("passwordLabel")}</Label>
             <Link
               href="/forgot-password"
               className="text-xs font-medium text-primary hover:underline"
             >
-              Forgot password?
+              {t("forgotPassword")}
             </Link>
           </div>
           <Input
@@ -99,19 +101,19 @@ function LoginForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder={t("passwordPlaceholder")}
           />
         </div>
 
         <Button type="submit" className="mt-2" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" />}
-          Sign in
+          {t("submit")}
         </Button>
       </form>
 
       <div className="mt-6 border-t border-border pt-5">
         <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Or try a demo account
+          {t("demoSectionLabel")}
         </p>
         <div className="flex flex-col gap-1.5">
           {DEMO_ACCOUNTS.map((account) => (

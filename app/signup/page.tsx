@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function SignupPage() {
+  const t = useTranslations("auth.signup");
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +33,7 @@ export default function SignupPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not create your account.");
+        setError(data.error || t("errorCreateAccount"));
         setLoading(false);
         return;
       }
@@ -42,7 +44,7 @@ export default function SignupPage() {
         redirect: false,
       });
       if (signInRes?.error) {
-        setError("Account created — please sign in.");
+        setError(t("errorCreatedPleaseSignIn"));
         setLoading(false);
         router.push("/login");
         return;
@@ -50,20 +52,20 @@ export default function SignupPage() {
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("errorGeneric"));
       setLoading(false);
     }
   }
 
   return (
     <AuthCard
-      title="Create your workspace"
-      description="Set up an admin account to start running payroll."
+      title={t("title")}
+      description={t("description")}
       footer={
         <>
-          Already have an account?{" "}
+          {t("haveAccount")}{" "}
           <Link href="/login" className="font-medium text-primary hover:underline">
-            Sign in
+            {t("signIn")}
           </Link>
         </>
       }
@@ -77,19 +79,19 @@ export default function SignupPage() {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="signup-name">Full name</Label>
+          <Label htmlFor="signup-name">{t("nameLabel")}</Label>
           <Input
             id="signup-name"
             autoComplete="name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Amara Okafor"
+            placeholder={t("namePlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="signup-email">Email</Label>
+          <Label htmlFor="signup-email">{t("emailLabel")}</Label>
           <Input
             id="signup-email"
             type="email"
@@ -97,12 +99,12 @@ export default function SignupPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
+            placeholder={t("emailPlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="signup-password">Password</Label>
+          <Label htmlFor="signup-password">{t("passwordLabel")}</Label>
           <Input
             id="signup-password"
             type="password"
@@ -111,13 +113,13 @@ export default function SignupPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
+            placeholder={t("passwordPlaceholder")}
           />
         </div>
 
         <Button type="submit" className="mt-2" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" />}
-          Create account
+          {t("submit")}
         </Button>
       </form>
     </AuthCard>

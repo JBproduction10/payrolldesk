@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, Fragment } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Printer, ChevronDown, ChevronRight, PackageSearch, Truck, Receipt, TriangleAlert } from "lucide-react";
-import { periodLabel, timeAgo } from "@/lib/format";
+import { money as formatMoney, periodLabel, timeAgo, formatDate } from "@/lib/format";
 import type { Currency, Requisition, SupplyCategory } from "@/lib/types";
 import { RequisitionStatusBadge } from "@/components/payroll/status-badges";
 import { Button } from "@/components/ui/button";
@@ -84,19 +85,8 @@ interface InventoryVarianceRow {
 
 type Outflow = Requisition & { clientName: string };
 
-const SUPPLY_CATEGORY_LABEL: Record<SupplyCategory, string> = {
-  uniform: "Uniform",
-  shoes: "Shoes",
-  sweater: "Sweater",
-  other: "Other",
-};
-
-function money(n: number, currency: Currency) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n);
+function money(n: number, currency: Currency, locale: "en" | "fr" = "en") {
+  return formatMoney(n, currency, locale);
 }
 
 export function PromoterView({
@@ -118,6 +108,17 @@ export function PromoterView({
   recentSupplySales: SupplySaleRow[];
   inventoryVariances: InventoryVarianceRow[];
 }) {
+  const t = useTranslations("promoterView");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = (c: SupplyCategory): string => {
+    const map: Record<SupplyCategory, string> = {
+      uniform: t("categoryUniform"),
+      shoes: t("categoryShoes"),
+      sweater: t("categorySweater"),
+      other: t("categoryOther"),
+    };
+    return map[c];
+  };
   const totals = summaries.reduce(
     (acc, s) => ({
       students: acc.students + s.studentCount,
@@ -147,10 +148,10 @@ export function PromoterView({
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground">
-            Group Balance Sheet
+            {t("title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Across all {summaries.length} schools · {periodLabel(period)}
+            {t("subtitle", { count: summaries.length, period: periodLabel(period, locale) })}
           </p>
         </div>
         <Button
@@ -159,18 +160,18 @@ export function PromoterView({
           onClick={() => window.print()}
         >
           <Printer className="size-4" />
-          Print report
+          {t("printReport")}
         </Button>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
         {[
-          ["Students", totals.students.toLocaleString()],
-          ["Fees collected", money(totals.collected, currency)],
-          ["Fees outstanding", money(totals.outstanding, currency)],
-          ["Salaries", money(totals.salary, currency)],
-          ["Expenses", money(totals.expenses, currency)],
-          ["Net position", money(totals.net, currency)],
+          [t("students"), totals.students.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")],
+          [t("feesCollected"), money(totals.collected, currency, locale)],
+          [t("feesOutstanding"), money(totals.outstanding, currency, locale)],
+          [t("salaries"), money(totals.salary, currency, locale)],
+          [t("expenses"), money(totals.expenses, currency, locale)],
+          [t("netPosition"), money(totals.net, currency, locale)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="text-xs text-muted-foreground">{label}</div>
@@ -186,13 +187,13 @@ export function PromoterView({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                <th className="px-4 py-3 font-medium">School</th>
-                <th className="px-4 py-3 font-medium">Students</th>
-                <th className="px-4 py-3 font-medium">Fees collected</th>
-                <th className="px-4 py-3 font-medium">Fees outstanding</th>
-                <th className="px-4 py-3 font-medium">Salaries</th>
-                <th className="px-4 py-3 font-medium">Expenses</th>
-                <th className="px-4 py-3 font-medium">Net</th>
+                <th className="px-4 py-3 font-medium">{t("columnSchool")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnStudents")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnFeesCollected")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnFeesOutstanding")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnSalaries")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnExpenses")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnNet")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -201,21 +202,21 @@ export function PromoterView({
                   <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{s.studentCount}</td>
                   <td className="px-4 py-3 text-success">
-                    {money(s.feesCollected, s.currency)}
+                    {money(s.feesCollected, s.currency, locale)}
                   </td>
                   <td className="px-4 py-3 text-brand-clay">
-                    {money(s.feesOutstanding, s.currency)}
+                    {money(s.feesOutstanding, s.currency, locale)}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {money(s.totalSalary, s.currency)}
+                    {money(s.totalSalary, s.currency, locale)}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {money(s.expensesThisMonth, s.currency)}
+                    {money(s.expensesThisMonth, s.currency, locale)}
                   </td>
                   <td
                     className={`px-4 py-3 font-semibold ${s.net >= 0 ? "text-success" : "text-destructive"}`}
                   >
-                    {money(s.net, s.currency)}
+                    {money(s.net, s.currency, locale)}
                   </td>
                 </tr>
               ))}
@@ -225,21 +226,20 @@ export function PromoterView({
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Net position = fees collected − salaries − expenses logged this period. This view
-        is read-only.
+        {t("netPositionFootnote")}
       </p>
 
       <div className="mt-8">
         <h2 className="font-heading text-lg font-semibold text-foreground">
-          Treasury outflows
+          {t("treasuryOutflows")}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every fund request Bonté Service has actually paid out, across every school.
+          {t("treasuryOutflowsSubtitle")}
         </p>
 
         {outflows.length === 0 ? (
           <div className="mt-3 rounded-2xl border border-dashed border-border bg-card py-10 text-center text-sm text-muted-foreground">
-            No payouts recorded yet.
+            {t("noPayoutsYet")}
           </div>
         ) : (
           <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -247,12 +247,12 @@ export function PromoterView({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                    <th className="px-4 py-3 font-medium">School</th>
-                    <th className="px-4 py-3 font-medium">Description</th>
-                    <th className="px-4 py-3 font-medium">Method</th>
-                    <th className="px-4 py-3 font-medium">Paid</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 text-right font-medium">When</th>
+                    <th className="px-4 py-3 font-medium">{t("columnSchool")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columnDescription")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columnMethod")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columnPaid")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t("columnWhen")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -269,13 +269,13 @@ export function PromoterView({
                           {o.paymentMethod ?? "—"}
                         </td>
                         <td className="px-4 py-3 font-medium text-foreground">
-                          {money(o.paidAmount ?? 0, outflowCurrency)}
+                          {money(o.paidAmount ?? 0, outflowCurrency, locale)}
                         </td>
                         <td className="px-4 py-3">
                           <RequisitionStatusBadge status={o.status} />
                         </td>
                         <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                          {o.paidAt ? timeAgo(o.paidAt) : "—"}
+                          {o.paidAt ? timeAgo(o.paidAt, locale) : "—"}
                         </td>
                       </tr>
                     );
@@ -291,20 +291,19 @@ export function PromoterView({
         <div className="flex items-center gap-2">
           <PackageSearch className="size-5 text-muted-foreground" />
           <h2 className="font-heading text-lg font-semibold text-foreground">
-            Supplies & Logistics
+            {t("suppliesLogistics")}
           </h2>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Stock Bonté Service has delivered, what each Intendance has sold, and every gap a
-          physical count has turned up — across every school.
+          {t("suppliesSubtitle")}
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
           {[
-            ["Units delivered", supplyTotals.delivered.toLocaleString()],
-            ["Units sold", supplyTotals.sold.toLocaleString()],
-            ["Units on hand", supplyTotals.onHand.toLocaleString()],
-            ["Sales revenue", money(supplyTotals.revenue, currency)],
+            [t("unitsDelivered"), supplyTotals.delivered.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")],
+            [t("unitsSold"), supplyTotals.sold.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")],
+            [t("unitsOnHand"), supplyTotals.onHand.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")],
+            [t("salesRevenue"), money(supplyTotals.revenue, currency, locale)],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="text-xs text-muted-foreground">{label}</div>
@@ -320,7 +319,7 @@ export function PromoterView({
                 : "border-success/30 bg-success/5"
             }`}
           >
-            <div className="text-xs text-muted-foreground">Discrepancies flagged</div>
+            <div className="text-xs text-muted-foreground">{t("discrepanciesFlagged")}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
               {supplyTotals.variances}
             </div>
@@ -334,12 +333,11 @@ export function PromoterView({
             <div className="flex items-center gap-2">
               <TriangleAlert className="size-4 text-destructive" />
               <h3 className="font-heading text-base font-semibold text-foreground">
-                Inventory discrepancies
+                {t("inventoryDiscrepancies")}
               </h3>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Physical counts that didn't match what deliveries minus sales predicted — the
-              signal Bonté Service's fund requests can't show you.
+              {t("inventoryDiscrepanciesSubtitle")}
             </p>
             <div className="mt-3 flex flex-col gap-3">
               {inventoryVariances.map((v) => (
@@ -353,12 +351,16 @@ export function PromoterView({
                     </span>
                     <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
                       {v.variance > 0 ? "+" : ""}
-                      {v.variance} vs expected
+                      {v.variance} {t("vsExpected")}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Counted {v.countedQty} (expected {v.expectedQty}) on {v.countedAt} by{" "}
-                    {v.countedBy}
+                    {t("countedLine", {
+                      counted: v.countedQty,
+                      expected: v.expectedQty,
+                      date: formatDate(v.countedAt, locale),
+                      by: v.countedBy,
+                    })}
                     {v.note ? ` — "${v.note}"` : ""}
                   </p>
                 </div>
@@ -372,12 +374,12 @@ export function PromoterView({
             <div className="flex items-center gap-2">
               <Truck className="size-4 text-muted-foreground" />
               <h3 className="font-heading text-base font-semibold text-foreground">
-                Recent deliveries
+                {t("recentDeliveries")}
               </h3>
             </div>
             {recentSupplyDeliveries.length === 0 ? (
               <div className="mt-3 rounded-2xl border border-dashed border-border bg-card py-8 text-center text-sm text-muted-foreground">
-                No deliveries logged yet.
+                {t("noDeliveriesYet")}
               </div>
             ) : (
               <div className="mt-3 flex flex-col gap-2">
@@ -387,11 +389,10 @@ export function PromoterView({
                       <span className="font-medium text-foreground">
                         {d.clientName} — {d.quantity}× {d.itemLabel}
                       </span>
-                      <span className="text-xs text-muted-foreground">{timeAgo(d.createdAt)}</span>
+                      <span className="text-xs text-muted-foreground">{timeAgo(d.createdAt, locale)}</span>
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {SUPPLY_CATEGORY_LABEL[d.category]} · ref {d.reference} · delivered{" "}
-                      {d.deliveredAt}
+                      {categoryLabel(d.category)} · ref {d.reference} · {t("deliveredOn", { date: d.deliveredAt })}
                     </p>
                   </div>
                 ))}
@@ -403,12 +404,12 @@ export function PromoterView({
             <div className="flex items-center gap-2">
               <Receipt className="size-4 text-muted-foreground" />
               <h3 className="font-heading text-base font-semibold text-foreground">
-                Recent sales
+                {t("recentSales")}
               </h3>
             </div>
             {recentSupplySales.length === 0 ? (
               <div className="mt-3 rounded-2xl border border-dashed border-border bg-card py-8 text-center text-sm text-muted-foreground">
-                No sales recorded yet.
+                {t("noSalesYet")}
               </div>
             ) : (
               <div className="mt-3 flex flex-col gap-2">
@@ -422,11 +423,11 @@ export function PromoterView({
                           {s.clientName} — {s.quantity}× {s.itemLabel}
                         </span>
                         <span className="font-semibold text-foreground">
-                          {money(s.totalAmount, saleCurrency)}
+                          {money(s.totalAmount, saleCurrency, locale)}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Sold to {s.buyerName} on {s.soldAt}
+                        {t("soldToOn", { buyer: s.buyerName, date: s.soldAt })}
                       </p>
                     </div>
                   );
@@ -447,6 +448,17 @@ function SupplyStockByClient({
   summaries: SupplySummary[];
   stockByClient: Record<string, SupplyStockRow[]>;
 }) {
+  const t = useTranslations("promoterView");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = (c: SupplyCategory): string => {
+    const map: Record<SupplyCategory, string> = {
+      uniform: t("categoryUniform"),
+      shoes: t("categoryShoes"),
+      sweater: t("categorySweater"),
+      other: t("categoryOther"),
+    };
+    return map[c];
+  };
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   function toggle(clientId: string) {
@@ -464,12 +476,12 @@ function SupplyStockByClient({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">School</th>
-              <th className="px-4 py-3 font-medium">Delivered</th>
-              <th className="px-4 py-3 font-medium">Sold</th>
-              <th className="px-4 py-3 font-medium">On hand</th>
-              <th className="px-4 py-3 font-medium">Revenue</th>
-              <th className="px-4 py-3 font-medium">Discrepancies</th>
+              <th className="px-4 py-3 font-medium">{t("columnSchoolShort")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnDelivered")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnSold")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnOnHand")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnRevenue")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnDiscrepancies")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -496,7 +508,7 @@ function SupplyStockByClient({
                     <td className="px-4 py-3 text-muted-foreground">{s.unitsSold}</td>
                     <td className="px-4 py-3 font-semibold text-foreground">{s.unitsOnHand}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {money(s.revenue, s.currency)}
+                      {money(s.revenue, s.currency, locale)}
                     </td>
                     <td className="px-4 py-3">
                       {s.varianceCount > 0 ? (
@@ -505,7 +517,7 @@ function SupplyStockByClient({
                         </span>
                       ) : (
                         <span className="rounded-full bg-success/12 px-2.5 py-1 text-xs font-medium text-success">
-                          None
+                          {t("none")}
                         </span>
                       )}
                     </td>
@@ -515,17 +527,17 @@ function SupplyStockByClient({
                       <td colSpan={6} className="bg-muted/20 px-4 py-3">
                         {rows.length === 0 ? (
                           <p className="text-xs text-muted-foreground">
-                            No stock on record for {s.name} yet.
+                            {t("noStockYet", { name: s.name })}
                           </p>
                         ) : (
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-left text-muted-foreground">
-                                <th className="py-1.5 pr-4 font-medium">Item</th>
-                                <th className="py-1.5 pr-4 font-medium">Category</th>
-                                <th className="py-1.5 pr-4 font-medium">Delivered</th>
-                                <th className="py-1.5 pr-4 font-medium">Sold</th>
-                                <th className="py-1.5 pr-4 font-medium">On hand</th>
+                                <th className="py-1.5 pr-4 font-medium">{t("columnItem")}</th>
+                                <th className="py-1.5 pr-4 font-medium">{t("columnCategory")}</th>
+                                <th className="py-1.5 pr-4 font-medium">{t("columnDelivered")}</th>
+                                <th className="py-1.5 pr-4 font-medium">{t("columnSold")}</th>
+                                <th className="py-1.5 pr-4 font-medium">{t("columnOnHand")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -533,7 +545,7 @@ function SupplyStockByClient({
                                 <tr key={`${r.category}::${r.itemLabel}`} className="border-t border-border/60">
                                   <td className="py-1.5 pr-4 text-foreground">{r.itemLabel}</td>
                                   <td className="py-1.5 pr-4 text-muted-foreground">
-                                    {SUPPLY_CATEGORY_LABEL[r.category]}
+                                    {categoryLabel(r.category)}
                                   </td>
                                   <td className="py-1.5 pr-4 text-foreground">{r.delivered}</td>
                                   <td className="py-1.5 pr-4 text-foreground">{r.sold}</td>

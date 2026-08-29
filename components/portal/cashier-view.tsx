@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Plus, Trash2, Wallet, Users, Receipt, History } from "lucide-react";
 import { money, formatDate, periodLabel } from "@/lib/format";
 import { paymentFor, paymentsForStudent, schoolFinancials } from "@/lib/aggregate";
@@ -62,9 +63,16 @@ export function CashierView({
   period: string;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("cashierView");
+  const locale = useLocale() as "en" | "fr";
   const [tab, setTab] = useState<Tab>("students");
 
   const finance = schoolFinancials(students, feePayments, expenses, period);
+
+  const TAB_DEFS = [
+    { key: "students" as const, label: t("tabStudents"), icon: Users },
+    { key: "expenses" as const, label: t("tabExpenses"), icon: Receipt },
+  ];
 
   return (
     <div>
@@ -73,53 +81,50 @@ export function CashierView({
           {client.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enroll students, record fee payments, and log supply/service payments
+          {t("subtitle")}
         </p>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Students</div>
+          <div className="text-xs text-muted-foreground">{t("students")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {students.length}
           </div>
         </div>
         <div className="rounded-2xl border border-success/30 bg-success/5 p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Fees collected — {periodLabel(period)}</div>
+          <div className="text-xs text-muted-foreground">{t("feesCollected", { period: periodLabel(period, locale) })}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(finance.feesCollected, client.currency)}
+            {money(finance.feesCollected, client.currency, locale)}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Fees outstanding</div>
+          <div className="text-xs text-muted-foreground">{t("feesOutstanding")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(finance.feesOutstanding, client.currency)}
+            {money(finance.feesOutstanding, client.currency, locale)}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Expenses logged</div>
+          <div className="text-xs text-muted-foreground">{t("expensesLogged")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(expenses.reduce((s, x) => s + x.amount, 0), client.currency)}
+            {money(expenses.reduce((s, x) => s + x.amount, 0), client.currency, locale)}
           </div>
         </div>
       </div>
 
       <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {[
-          { key: "students" as const, label: "Students", icon: Users },
-          { key: "expenses" as const, label: "Expenses", icon: Receipt },
-        ].map((t) => (
+        {TAB_DEFS.map((tItem) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tItem.key}
+            onClick={() => setTab(tItem.key)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === tItem.key
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <t.icon className="size-3.5" />
-            {t.label}
+            <tItem.icon className="size-3.5" />
+            {tItem.label}
           </button>
         ))}
       </div>
@@ -155,13 +160,15 @@ function StudentsTab({
   period: string;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("cashierView");
+  const locale = useLocale() as "en" | "fr";
   async function remove(id: string) {
     const res = await fetch(`/api/portal/students?id=${id}`, { method: "DELETE" });
     if (res.ok) {
-      toast.add({ title: "Student removed", type: "success" });
+      toast.add({ title: t("studentRemovedToast"), type: "success" });
       onRefresh();
     } else {
-      toast.add({ title: "Could not remove student", type: "error" });
+      toast.add({ title: t("studentRemoveFailedToast"), type: "error" });
     }
   }
 
@@ -169,7 +176,7 @@ function StudentsTab({
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="text-sm font-medium text-foreground">
-          {students.length} students
+          {t("studentsCount", { count: students.length })}
         </span>
         <AddStudentDialog client={client} onCreated={onRefresh} />
       </div>
@@ -177,19 +184,19 @@ function StudentsTab({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">Student</th>
-              <th className="px-4 py-3 font-medium">Class</th>
-              <th className="px-4 py-3 font-medium">Fee</th>
-              <th className="px-4 py-3 font-medium">Paid ({periodLabel(period)})</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t("columnStudent")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnClass")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnFee")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnPaid", { period: periodLabel(period, locale) })}</th>
+              <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("columnActions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {students.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  No students enrolled yet.
+                  {t("noStudentsYet")}
                 </td>
               </tr>
             ) : (
@@ -204,10 +211,10 @@ function StudentsTab({
                       <div className="text-xs">{cycleLabel(s.cycle)}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {money(s.monthlyFee, client.currency)}
+                      {money(s.monthlyFee, client.currency, locale)}
                     </td>
                     <td className="px-4 py-3 text-foreground">
-                      {money(record?.amountPaid ?? 0, client.currency)}
+                      {money(record?.amountPaid ?? 0, client.currency, locale)}
                     </td>
                     <td className="px-4 py-3">
                       <FeeStatusBadge status={record?.status ?? "unpaid"} />
@@ -234,8 +241,8 @@ function StudentsTab({
                           onSaved={onRefresh}
                         />
                         <ConfirmDeleteDialog
-                          title={`Remove ${s.name}?`}
-                          description="This deletes their enrollment and full payment history."
+                          title={t("removeConfirmTitle", { name: s.name })}
+                          description={t("removeConfirmDescription")}
                           onConfirm={() => remove(s.id)}
                           trigger={
                             <Button
@@ -267,6 +274,7 @@ function AddStudentDialog({
   client: Client;
   onCreated: () => void;
 }) {
+  const t = useTranslations("cashierView");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [cycle, setCycle] = useState<Cycle>("primaire");
@@ -297,7 +305,7 @@ function AddStudentDialog({
         }),
       });
       if (res.ok) {
-        toast.add({ title: `Added ${name.trim()}`, type: "success" });
+        toast.add({ title: t("studentAddedToast", { name: name.trim() }), type: "success" });
         setName("");
         setCycle("primaire");
         setClassName("");
@@ -307,7 +315,7 @@ function AddStudentDialog({
         onCreated();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not add student", type: "error" });
+        toast.add({ title: data.error || t("studentAddFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -320,21 +328,21 @@ function AddStudentDialog({
         render={
           <Button size="sm">
             <Plus className="size-3.5" />
-            Add Student
+            {t("addStudent")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Add student</DialogTitle>
+          <DialogTitle>{t("addStudentTitle")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="as-name">Full name</Label>
+            <Label htmlFor="as-name">{t("fullName")}</Label>
             <Input id="as-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="as-cycle">Cycle</Label>
+            <Label htmlFor="as-cycle">{t("cycle")}</Label>
             <NativeSelect
               id="as-cycle"
               className="w-full"
@@ -353,7 +361,7 @@ function AddStudentDialog({
             </NativeSelect>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="as-class">Class</Label>
+            <Label htmlFor="as-class">{t("class")}</Label>
             <NativeSelect
               id="as-class"
               className="w-full"
@@ -361,7 +369,7 @@ function AddStudentDialog({
               onChange={(e) => setClassName(e.target.value)}
             >
               <NativeSelectOption value="" disabled>
-                Select a class…
+                {t("selectClass")}
               </NativeSelectOption>
               {CYCLE_CLASSES[cycle].map((cls) => (
                 <NativeSelectOption key={cls} value={cls}>
@@ -371,7 +379,7 @@ function AddStudentDialog({
             </NativeSelect>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="as-fee">Monthly fee ({client.currency})</Label>
+            <Label htmlFor="as-fee">{t("monthlyFee", { currency: client.currency })}</Label>
             <Input
               id="as-fee"
               type="number"
@@ -381,7 +389,7 @@ function AddStudentDialog({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="as-contact">Guardian contact</Label>
+            <Label htmlFor="as-contact">{t("guardianContact")}</Label>
             <Input
               id="as-contact"
               value={guardianContact}
@@ -389,24 +397,24 @@ function AddStudentDialog({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="as-status">Status</Label>
+            <Label htmlFor="as-status">{t("status")}</Label>
             <NativeSelect
               id="as-status"
               className="w-full"
               value={status}
               onChange={(e) => setStatus(e.target.value as StudentStatus)}
             >
-              <NativeSelectOption value="active">Active</NativeSelectOption>
-              <NativeSelectOption value="withdrawn">Withdrawn</NativeSelectOption>
+              <NativeSelectOption value="active">{t("statusActive")}</NativeSelectOption>
+              <NativeSelectOption value="withdrawn">{t("statusWithdrawn")}</NativeSelectOption>
             </NativeSelect>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Adding…" : "Add Student"}
+            {loading ? t("adding") : t("addStudent")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -427,6 +435,8 @@ function RecordPaymentDialog({
   payment?: FeePayment;
   onSaved: () => void;
 }) {
+  const t = useTranslations("cashierView");
+  const locale = useLocale() as "en" | "fr";
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(String(payment?.amountPaid ?? 0));
   const [status, setStatus] = useState<FeeStatus>(payment?.status ?? "unpaid");
@@ -456,13 +466,13 @@ function RecordPaymentDialog({
       });
       if (res.ok) {
         toast.add({
-          title: `Recorded ${periodLabel(period)} payment for ${student.name}`,
+          title: t("paymentRecordedToast", { period: periodLabel(period, locale), name: student.name }),
           type: "success",
         });
         setOpen(false);
         onSaved();
       } else {
-        toast.add({ title: "Could not save payment", type: "error" });
+        toast.add({ title: t("paymentFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -484,18 +494,18 @@ function RecordPaymentDialog({
         render={
           <Button variant="outline" size="sm">
             <Wallet className="size-3.5" />
-            Payment
+            {t("payment")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Record payment — {student.name}</DialogTitle>
+          <DialogTitle>{t("recordPaymentTitle", { name: student.name })}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">{periodLabel(period)}</p>
+        <p className="text-sm text-muted-foreground">{periodLabel(period, locale)}</p>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rp-amount">Amount paid ({client.currency})</Label>
+            <Label htmlFor="rp-amount">{t("amountPaid", { currency: client.currency })}</Label>
             <Input
               id="rp-amount"
               type="number"
@@ -505,26 +515,26 @@ function RecordPaymentDialog({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rp-status">Status</Label>
+            <Label htmlFor="rp-status">{t("status")}</Label>
             <NativeSelect
               id="rp-status"
               className="w-full"
               value={status}
               onChange={(e) => setStatus(e.target.value as FeeStatus)}
             >
-              <NativeSelectOption value="paid">Paid</NativeSelectOption>
-              <NativeSelectOption value="partial">Partial</NativeSelectOption>
-              <NativeSelectOption value="unpaid">Unpaid</NativeSelectOption>
-              <NativeSelectOption value="social_case">Social case</NativeSelectOption>
+              <NativeSelectOption value="paid">{t("statusPaid")}</NativeSelectOption>
+              <NativeSelectOption value="partial">{t("statusPartial")}</NativeSelectOption>
+              <NativeSelectOption value="unpaid">{t("statusUnpaid")}</NativeSelectOption>
+              <NativeSelectOption value="social_case">{t("statusSocialCase")}</NativeSelectOption>
             </NativeSelect>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Saving…" : "Save Payment"}
+            {loading ? t("saving") : t("savePayment")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -534,15 +544,19 @@ function RecordPaymentDialog({
 
 /* ------------------------------ expenses tab ------------------------------ */
 
-const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
-  fuel: "Fuel",
-  credit: "Credit repayment",
-  renovation: "Renovation",
-  supplies: "Supplies",
-  utilities: "Utilities",
-  maintenance: "Maintenance",
-  other: "Other",
-};
+function useExpenseCategoryLabel() {
+  const t = useTranslations("cashierView");
+  const map: Record<ExpenseCategory, string> = {
+    fuel: t("categoryFuel"),
+    credit: t("categoryCredit"),
+    renovation: t("categoryRenovation"),
+    supplies: t("categorySupplies"),
+    utilities: t("categoryUtilities"),
+    maintenance: t("categoryMaintenance"),
+    other: t("categoryOther"),
+  };
+  return (c: ExpenseCategory) => map[c];
+}
 
 function ExpensesTab({
   client,
@@ -553,13 +567,16 @@ function ExpensesTab({
   expenses: Expense[];
   onRefresh: () => void;
 }) {
+  const t = useTranslations("cashierView");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = useExpenseCategoryLabel();
   async function remove(id: string) {
     const res = await fetch(`/api/portal/expenses?id=${id}`, { method: "DELETE" });
     if (res.ok) {
-      toast.add({ title: "Expense removed", type: "success" });
+      toast.add({ title: t("expenseRemovedToast"), type: "success" });
       onRefresh();
     } else {
-      toast.add({ title: "Could not remove expense", type: "error" });
+      toast.add({ title: t("expenseRemoveFailedToast"), type: "error" });
     }
   }
 
@@ -567,7 +584,7 @@ function ExpensesTab({
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="text-sm font-medium text-foreground">
-          {expenses.length} entries
+          {t("entries", { count: expenses.length })}
         </span>
         <AddExpenseDialog client={client} onCreated={onRefresh} />
       </div>
@@ -575,18 +592,18 @@ function ExpensesTab({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">Description</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Amount</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t("columnDescription")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnCategory")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnDate")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnAmount")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("columnActions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {expenses.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                  No expenses logged yet.
+                  {t("noExpensesYet")}
                 </td>
               </tr>
             ) : (
@@ -598,18 +615,18 @@ function ExpensesTab({
                       {e.description}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {CATEGORY_LABEL[e.category]}
+                      {categoryLabel(e.category)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(e.date)}
+                      {formatDate(e.date, locale)}
                     </td>
                     <td className="px-4 py-3 font-medium text-destructive">
-                      −{money(e.amount, client.currency)}
+                      −{money(e.amount, client.currency, locale)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <ConfirmDeleteDialog
-                        title="Remove this expense?"
-                        description="This entry will no longer count toward your totals."
+                        title={t("expenseRemoveConfirmTitle")}
+                        description={t("expenseRemoveConfirmDescription")}
                         onConfirm={() => remove(e.id)}
                         trigger={
                           <Button
@@ -639,6 +656,8 @@ function AddExpenseDialog({
   client: Client;
   onCreated: () => void;
 }) {
+  const t = useTranslations("cashierView");
+  const categoryLabel = useExpenseCategoryLabel();
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>("other");
@@ -647,6 +666,8 @@ function AddExpenseDialog({
   const [loading, setLoading] = useState(false);
 
   const valid = description.trim() && Number(amount) > 0 && date;
+
+  const CATEGORIES: ExpenseCategory[] = ["fuel", "credit", "renovation", "supplies", "utilities", "maintenance", "other"];
 
   async function handleSubmit() {
     if (!valid) return;
@@ -663,14 +684,14 @@ function AddExpenseDialog({
         }),
       });
       if (res.ok) {
-        toast.add({ title: "Expense logged", type: "success" });
+        toast.add({ title: t("expenseLoggedToast"), type: "success" });
         setDescription("");
         setAmount("");
         setOpen(false);
         onCreated();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not log expense", type: "error" });
+        toast.add({ title: data.error || t("expenseFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -683,17 +704,17 @@ function AddExpenseDialog({
         render={
           <Button size="sm">
             <Plus className="size-3.5" />
-            Log Expense
+            {t("logExpense")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Log expense</DialogTitle>
+          <DialogTitle>{t("logExpenseTitle")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ae-desc">Description</Label>
+            <Label htmlFor="ae-desc">{t("description")}</Label>
             <Input
               id="ae-desc"
               value={description}
@@ -702,22 +723,22 @@ function AddExpenseDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ae-category">Category</Label>
+              <Label htmlFor="ae-category">{t("category")}</Label>
               <NativeSelect
                 id="ae-category"
                 className="w-full"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
               >
-                {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
-                  <NativeSelectOption key={value} value={value}>
-                    {label}
+                {CATEGORIES.map((c) => (
+                  <NativeSelectOption key={c} value={c}>
+                    {categoryLabel(c)}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ae-amount">Amount ({client.currency})</Label>
+              <Label htmlFor="ae-amount">{t("amount", { currency: client.currency })}</Label>
               <Input
                 id="ae-amount"
                 type="number"
@@ -728,7 +749,7 @@ function AddExpenseDialog({
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ae-date">Date</Label>
+            <Label htmlFor="ae-date">{t("date")}</Label>
             <Input
               id="ae-date"
               type="date"
@@ -739,10 +760,10 @@ function AddExpenseDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Logging…" : "Log Expense"}
+            {loading ? t("logging") : t("logExpense")}
           </Button>
         </DialogFooter>
       </DialogContent>

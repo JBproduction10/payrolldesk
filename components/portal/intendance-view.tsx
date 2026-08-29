@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { PackageSearch, Truck, Receipt, ClipboardList, Plus } from "lucide-react";
 import { timeAgo, money } from "@/lib/format";
 import type { Client, Currency, SupplyCategory } from "@/lib/types";
@@ -21,12 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 
-const SUPPLY_CATEGORY_LABEL: Record<SupplyCategory, string> = {
-  uniform: "Uniform",
-  shoes: "Shoes",
-  sweater: "Sweater",
-  other: "Other",
-};
+const SUPPLY_CATEGORIES: SupplyCategory[] = ["uniform", "shoes", "sweater", "other"];
 
 export interface IntendanceDelivery {
   id: string;
@@ -83,6 +79,7 @@ export function IntendanceView({
   inventoryCounts: IntendanceInventoryCount[];
   onRefresh: () => void;
 }) {
+  const t = useTranslations("intendanceView");
   const [tab, setTab] = useState<Tab>("stock");
   // Known items (category + label) that already exist, from deliveries —
   // this is what the sale/count forms suggest, since Intendance never
@@ -92,13 +89,20 @@ export function IntendanceView({
 
   const varianceCount = inventoryCounts.filter((c) => c.variance !== 0).length;
 
+  const TAB_DEFS = [
+    { key: "stock" as const, label: t("tabStock"), icon: PackageSearch },
+    { key: "sales" as const, label: t("tabSales"), icon: Receipt },
+    { key: "deliveries" as const, label: t("tabDeliveries"), icon: Truck },
+    { key: "counts" as const, label: t("tabCounts"), icon: ClipboardList },
+  ];
+
   return (
     <div>
       <div className="mb-6 flex items-center gap-2">
         <PackageSearch className="size-6 text-muted-foreground" />
         <div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground">
-            Intendance & Logistics
+            {t("title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{client?.name}</p>
         </div>
@@ -106,13 +110,13 @@ export function IntendanceView({
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Items tracked</div>
+          <div className="text-xs text-muted-foreground">{t("itemsTracked")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {stock.length}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Units on hand</div>
+          <div className="text-xs text-muted-foreground">{t("unitsOnHand")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {stock.reduce((sum, s) => sum + s.stock, 0)}
           </div>
@@ -124,7 +128,7 @@ export function IntendanceView({
               : "border-success/30 bg-success/5"
           }`}
         >
-          <div className="text-xs text-muted-foreground">Counts with a gap</div>
+          <div className="text-xs text-muted-foreground">{t("countsWithGap")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {varianceCount}
           </div>
@@ -133,23 +137,18 @@ export function IntendanceView({
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-          {[
-            { key: "stock" as const, label: "Stock", icon: PackageSearch },
-            { key: "sales" as const, label: "Sales", icon: Receipt },
-            { key: "deliveries" as const, label: "Deliveries received", icon: Truck },
-            { key: "counts" as const, label: "Inventory counts", icon: ClipboardList },
-          ].map((t) => (
+          {TAB_DEFS.map((tItem) => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
+              key={tItem.key}
+              onClick={() => setTab(tItem.key)}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                tab === t.key
+                tab === tItem.key
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <t.icon className="size-3.5" />
-              {t.label}
+              <tItem.icon className="size-3.5" />
+              {tItem.label}
             </button>
           ))}
         </div>
@@ -166,6 +165,17 @@ export function IntendanceView({
   );
 }
 
+function useSupplyCategoryLabel() {
+  const t = useTranslations("intendanceView");
+  const map: Record<SupplyCategory, string> = {
+    uniform: t("categoryUniform"),
+    shoes: t("categoryShoes"),
+    sweater: t("categorySweater"),
+    other: t("categoryOther"),
+  };
+  return (c: SupplyCategory) => map[c];
+}
+
 function EmptyState({ icon: Icon, message }: { icon: typeof PackageSearch; message: string }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
@@ -176,11 +186,13 @@ function EmptyState({ icon: Icon, message }: { icon: typeof PackageSearch; messa
 }
 
 function StockTable({ rows }: { rows: SupplyStockRow[] }) {
+  const t = useTranslations("intendanceView");
+  const categoryLabel = useSupplyCategoryLabel();
   if (rows.length === 0) {
     return (
       <EmptyState
         icon={PackageSearch}
-        message="No stock on record yet — it appears here once Bonté Service logs a delivery to your school."
+        message={t("noStockYet")}
       />
     );
   }
@@ -190,11 +202,11 @@ function StockTable({ rows }: { rows: SupplyStockRow[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground">
-              <th className="px-4 py-3 font-medium">Item</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Delivered</th>
-              <th className="px-4 py-3 font-medium">Sold</th>
-              <th className="px-4 py-3 font-medium">On hand</th>
+              <th className="px-4 py-3 font-medium">{t("columnItem")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnCategory")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnDelivered")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnSold")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnOnHand")}</th>
             </tr>
           </thead>
           <tbody>
@@ -202,7 +214,7 @@ function StockTable({ rows }: { rows: SupplyStockRow[] }) {
               <tr key={`${r.category}::${r.itemLabel}`} className="border-b border-border last:border-0">
                 <td className="px-4 py-3 font-medium text-foreground">{r.itemLabel}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {SUPPLY_CATEGORY_LABEL[r.category]}
+                  {categoryLabel(r.category)}
                 </td>
                 <td className="px-4 py-3 text-foreground">{r.delivered}</td>
                 <td className="px-4 py-3 text-foreground">{r.sold}</td>
@@ -217,8 +229,10 @@ function StockTable({ rows }: { rows: SupplyStockRow[] }) {
 }
 
 function SalesList({ rows, currency }: { rows: IntendanceSale[]; currency?: Currency }) {
+  const t = useTranslations("intendanceView");
+  const locale = useLocale() as "en" | "fr";
   if (rows.length === 0) {
-    return <EmptyState icon={Receipt} message="No sales recorded yet." />;
+    return <EmptyState icon={Receipt} message={t("noSalesYet")} />;
   }
   return (
     <div className="flex flex-col gap-3">
@@ -229,11 +243,11 @@ function SalesList({ rows, currency }: { rows: IntendanceSale[]; currency?: Curr
               {s.quantity}× {s.itemLabel}
             </span>
             <span className="font-heading text-lg font-semibold text-foreground">
-              {money(s.totalAmount, currency)}
+              {money(s.totalAmount, currency, locale)}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Sold to {s.buyerName} on {s.soldAt} · logged by {s.recordedBy} · {timeAgo(s.createdAt)}
+            {t("soldToLogged", { buyer: s.buyerName, date: s.soldAt, name: s.recordedBy, time: timeAgo(s.createdAt, locale) })}
           </p>
         </div>
       ))}
@@ -242,11 +256,13 @@ function SalesList({ rows, currency }: { rows: IntendanceSale[]; currency?: Curr
 }
 
 function DeliveriesList({ rows }: { rows: IntendanceDelivery[] }) {
+  const t = useTranslations("intendanceView");
+  const locale = useLocale() as "en" | "fr";
   if (rows.length === 0) {
     return (
       <EmptyState
         icon={Truck}
-        message="Nothing delivered yet. Bonté Service logs deliveries on their end — you don't need to request or enter them here."
+        message={t("noDeliveriesYet")}
       />
     );
   }
@@ -258,10 +274,10 @@ function DeliveriesList({ rows }: { rows: IntendanceDelivery[] }) {
             <span className="font-medium text-foreground">
               {d.quantity}× {d.itemLabel}
             </span>
-            <span className="text-xs text-muted-foreground">ref {d.reference}</span>
+            <span className="text-xs text-muted-foreground">{t("ref", { reference: d.reference })}</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Delivered {d.deliveredAt} by {d.recordedBy} · {timeAgo(d.createdAt)}
+            {t("deliveredByLogged", { date: d.deliveredAt, name: d.recordedBy, time: timeAgo(d.createdAt, locale) })}
           </p>
         </div>
       ))}
@@ -270,11 +286,13 @@ function DeliveriesList({ rows }: { rows: IntendanceDelivery[] }) {
 }
 
 function CountsList({ rows }: { rows: IntendanceInventoryCount[] }) {
+  const t = useTranslations("intendanceView");
+  const locale = useLocale() as "en" | "fr";
   if (rows.length === 0) {
     return (
       <EmptyState
         icon={ClipboardList}
-        message="No inventory counts logged yet. Do one periodically to check the physical stock against what's expected."
+        message={t("noCountsYet")}
       />
     );
   }
@@ -292,12 +310,12 @@ function CountsList({ rows }: { rows: IntendanceInventoryCount[] }) {
               }`}
             >
               {c.variance === 0
-                ? "Matches"
-                : `${c.variance > 0 ? "+" : ""}${c.variance} vs expected`}
+                ? t("matches")
+                : t("vsExpectedShort", { variance: `${c.variance > 0 ? "+" : ""}${c.variance}` })}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Counted {c.countedQty} (expected {c.expectedQty}) on {c.countedAt} by {c.countedBy}
+            {t("countedLine", { counted: c.countedQty, expected: c.expectedQty, date: c.countedAt, by: c.countedBy })}
             {c.note ? ` — "${c.note}"` : ""}
           </p>
         </div>
@@ -313,6 +331,8 @@ function RecordSaleDialog({
   knownItems: { category: SupplyCategory; itemLabel: string }[];
   onRefresh: () => void;
 }) {
+  const t = useTranslations("intendanceView");
+  const categoryLabel = useSupplyCategoryLabel();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [category, setCategory] = useState<SupplyCategory>("uniform");
@@ -355,13 +375,13 @@ function RecordSaleDialog({
         }),
       });
       if (res.ok) {
-        toast.add({ title: "Sale recorded", type: "success" });
+        toast.add({ title: t("saleRecordedToast"), type: "success" });
         setOpen(false);
         reset();
         onRefresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not record this sale", type: "error" });
+        toast.add({ title: data.error || t("saleFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -380,35 +400,35 @@ function RecordSaleDialog({
         render={
           <Button size="sm">
             <Plus className="size-3.5" />
-            Record sale
+            {t("recordSale")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Record a sale</DialogTitle>
-          <DialogDescription>Sell against stock already delivered to your school.</DialogDescription>
+          <DialogTitle>{t("recordSaleTitle")}</DialogTitle>
+          <DialogDescription>{t("recordSaleDescription")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rs-category">Category *</Label>
+            <Label htmlFor="rs-category">{t("category")}</Label>
             <NativeSelect
               id="rs-category"
               className="w-full"
               value={category}
               onChange={(e) => setCategory(e.target.value as SupplyCategory)}
             >
-              {(Object.keys(SUPPLY_CATEGORY_LABEL) as SupplyCategory[]).map((c) => (
+              {SUPPLY_CATEGORIES.map((c) => (
                 <NativeSelectOption key={c} value={c}>
-                  {SUPPLY_CATEGORY_LABEL[c]}
+                  {categoryLabel(c)}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rs-qty">Quantity *</Label>
+            <Label htmlFor="rs-qty">{t("quantity")}</Label>
             <Input
               id="rs-qty"
               type="number"
@@ -419,11 +439,11 @@ function RecordSaleDialog({
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="rs-item">Item *</Label>
+            <Label htmlFor="rs-item">{t("item")}</Label>
             <Input
               id="rs-item"
               list="rs-item-options"
-              placeholder="e.g. Uniform — Size M"
+              placeholder={t("itemPlaceholder")}
               value={itemLabel}
               onChange={(e) => setItemLabel(e.target.value)}
             />
@@ -437,7 +457,7 @@ function RecordSaleDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rs-price">Unit price *</Label>
+            <Label htmlFor="rs-price">{t("unitPrice")}</Label>
             <Input
               id="rs-price"
               type="number"
@@ -448,7 +468,7 @@ function RecordSaleDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rs-date">Sold on *</Label>
+            <Label htmlFor="rs-date">{t("soldOn")}</Label>
             <Input
               id="rs-date"
               type="date"
@@ -458,10 +478,10 @@ function RecordSaleDialog({
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="rs-buyer">Buyer *</Label>
+            <Label htmlFor="rs-buyer">{t("buyer")}</Label>
             <Input
               id="rs-buyer"
-              placeholder="Student or guardian name"
+              placeholder={t("buyerPlaceholder")}
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
             />
@@ -470,10 +490,10 @@ function RecordSaleDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Recording…" : "Record sale"}
+            {loading ? t("recording") : t("recordSale")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -488,6 +508,8 @@ function RecordCountDialog({
   knownItems: { category: SupplyCategory; itemLabel: string }[];
   onRefresh: () => void;
 }) {
+  const t = useTranslations("intendanceView");
+  const categoryLabel = useSupplyCategoryLabel();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [category, setCategory] = useState<SupplyCategory>("uniform");
@@ -522,13 +544,13 @@ function RecordCountDialog({
         }),
       });
       if (res.ok) {
-        toast.add({ title: "Count recorded", type: "success" });
+        toast.add({ title: t("countRecordedToast"), type: "success" });
         setOpen(false);
         reset();
         onRefresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not record this count", type: "error" });
+        toast.add({ title: data.error || t("countFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -547,37 +569,37 @@ function RecordCountDialog({
         render={
           <Button size="sm">
             <Plus className="size-3.5" />
-            Log count
+            {t("logCount")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Log an inventory count</DialogTitle>
+          <DialogTitle>{t("logCountTitle")}</DialogTitle>
           <DialogDescription>
-            Compares your physical count against what's expected from deliveries minus sales.
+            {t("logCountDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rc-category">Category *</Label>
+            <Label htmlFor="rc-category">{t("category")}</Label>
             <NativeSelect
               id="rc-category"
               className="w-full"
               value={category}
               onChange={(e) => setCategory(e.target.value as SupplyCategory)}
             >
-              {(Object.keys(SUPPLY_CATEGORY_LABEL) as SupplyCategory[]).map((c) => (
+              {SUPPLY_CATEGORIES.map((c) => (
                 <NativeSelectOption key={c} value={c}>
-                  {SUPPLY_CATEGORY_LABEL[c]}
+                  {categoryLabel(c)}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rc-qty">Counted quantity *</Label>
+            <Label htmlFor="rc-qty">{t("countedQuantity")}</Label>
             <Input
               id="rc-qty"
               type="number"
@@ -588,11 +610,11 @@ function RecordCountDialog({
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="rc-item">Item *</Label>
+            <Label htmlFor="rc-item">{t("item")}</Label>
             <Input
               id="rc-item"
               list="rc-item-options"
-              placeholder="e.g. Uniform — Size M"
+              placeholder={t("itemPlaceholder")}
               value={itemLabel}
               onChange={(e) => setItemLabel(e.target.value)}
             />
@@ -606,7 +628,7 @@ function RecordCountDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rc-date">Counted on *</Label>
+            <Label htmlFor="rc-date">{t("countedOn")}</Label>
             <Input
               id="rc-date"
               type="date"
@@ -616,17 +638,17 @@ function RecordCountDialog({
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="rc-note">Note</Label>
+            <Label htmlFor="rc-note">{t("note")}</Label>
             <Textarea id="rc-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Recording…" : "Log count"}
+            {loading ? t("recording") : t("logCount")}
           </Button>
         </DialogFooter>
       </DialogContent>

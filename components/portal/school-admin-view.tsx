@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Eye, Users, Receipt, ReceiptText, Send, History } from "lucide-react";
 import { money, formatDate, periodLabel, timeAgo } from "@/lib/format";
 import { paymentFor, schoolFinancials } from "@/lib/aggregate";
@@ -71,9 +72,18 @@ export function SchoolAdminView({
   period: string;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("schoolAdminView");
+  const locale = useLocale() as "en" | "fr";
   const [tab, setTab] = useState<Tab>("students");
   const byId = new Map(employees.map((e) => [e.id, e]));
   const finance = schoolFinancials(students, feePayments, expenses, period);
+
+  const TAB_DEFS = [
+    { key: "students" as const, label: t("tabStudents"), icon: Users },
+    { key: "expenses" as const, label: t("tabExpenses"), icon: Receipt },
+    { key: "requests" as const, label: t("tabRequests"), icon: Send },
+    { key: "payslips" as const, label: t("tabPayslips"), icon: ReceiptText },
+  ];
 
   return (
     <div>
@@ -82,55 +92,50 @@ export function SchoolAdminView({
           {client.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          View-only roster & finances — send requests to Bonté Service for anything the school needs
+          {t("subtitle")}
         </p>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Students</div>
+          <div className="text-xs text-muted-foreground">{t("students")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {students.length}
           </div>
         </div>
         <div className="rounded-2xl border border-success/30 bg-success/5 p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Fees collected — {periodLabel(period)}</div>
+          <div className="text-xs text-muted-foreground">{t("feesCollected", { period: periodLabel(period, locale) })}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(finance.feesCollected, client.currency)}
+            {money(finance.feesCollected, client.currency, locale)}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Fees outstanding</div>
+          <div className="text-xs text-muted-foreground">{t("feesOutstanding")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(finance.feesOutstanding, client.currency)}
+            {money(finance.feesOutstanding, client.currency, locale)}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Expenses logged</div>
+          <div className="text-xs text-muted-foreground">{t("expensesLogged")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(expenses.reduce((s, x) => s + x.amount, 0), client.currency)}
+            {money(expenses.reduce((s, x) => s + x.amount, 0), client.currency, locale)}
           </div>
         </div>
       </div>
 
       <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {[
-          { key: "students" as const, label: "Students", icon: Users },
-          { key: "expenses" as const, label: "Expenses", icon: Receipt },
-          { key: "requests" as const, label: "Requests", icon: Send },
-          { key: "payslips" as const, label: "Payslips", icon: ReceiptText },
-        ].map((t) => (
+        {TAB_DEFS.map((tItem) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tItem.key}
+            onClick={() => setTab(tItem.key)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === tItem.key
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <t.icon className="size-3.5" />
-            {t.label}
+            <tItem.icon className="size-3.5" />
+            {tItem.label}
           </button>
         ))}
       </div>
@@ -158,18 +163,18 @@ export function SchoolAdminView({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                  <th className="px-4 py-3 font-medium">Employee</th>
-                  <th className="px-4 py-3 font-medium">Period</th>
-                  <th className="px-4 py-3 font-medium">Net Pay</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 text-right font-medium">View</th>
+                  <th className="px-4 py-3 font-medium">{t("columnEmployee")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnPeriod")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnNetPay")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t("columnView")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {payslips.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                      No payslips generated yet.
+                      {t("noPayslipsYet")}
                     </td>
                   </tr>
                 ) : (
@@ -178,13 +183,13 @@ export function SchoolAdminView({
                     return (
                       <tr key={p.id}>
                         <td className="px-4 py-3 font-medium text-foreground">
-                          {emp?.name ?? "Unknown"}
+                          {emp?.name ?? t("unknown")}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
-                          {periodLabel(p.period)}
+                          {periodLabel(p.period, locale)}
                         </td>
                         <td className="px-4 py-3 font-medium text-foreground">
-                          {money(p.net, client.currency)}
+                          {money(p.net, client.currency, locale)}
                         </td>
                         <td className="px-4 py-3">
                           <PayslipStatusBadge status={p.status} />
@@ -192,14 +197,14 @@ export function SchoolAdminView({
                         <td className="px-4 py-3 text-right">
                           <PortalPayslipDialog
                             payslip={p}
-                            employeeName={emp?.name ?? "Unknown"}
+                            employeeName={emp?.name ?? t("unknown")}
                             employeePosition={emp?.position ?? ""}
                             currency={client.currency}
                             schoolName={client.name}
                             trigger={
                               <Button variant="outline" size="sm">
                                 <Eye className="size-3.5" />
-                                View
+                                {t("view")}
                               </Button>
                             }
                           />
@@ -230,24 +235,26 @@ function StudentsReadOnly({
   feePayments: FeePayment[];
   period: string;
 }) {
+  const t = useTranslations("schoolAdminView");
+  const locale = useLocale() as "en" | "fr";
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">Student</th>
-              <th className="px-4 py-3 font-medium">Class</th>
-              <th className="px-4 py-3 font-medium">Guardian contact</th>
-              <th className="px-4 py-3 font-medium">Status — {periodLabel(period)}</th>
-              <th className="px-4 py-3 text-right font-medium">History</th>
+              <th className="px-4 py-3 font-medium">{t("columnStudent")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnClass")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnGuardianContact")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnStatusPeriod", { period: periodLabel(period, locale) })}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("columnHistory")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {students.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                  No students enrolled yet.
+                  {t("noStudentsYet")}
                 </td>
               </tr>
             ) : (
@@ -289,35 +296,50 @@ function StudentsReadOnly({
 /* ------------------------------ read-only expenses ------------------------------ */
 
 function ExpensesReadOnly({ client, expenses }: { client: Client; expenses: Expense[] }) {
+  const t = useTranslations("schoolAdminView");
+  const tCat = useTranslations("expensesPage");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = (c: string) => {
+    const map: Record<string, string> = {
+      fuel: tCat("categoryFuel"),
+      credit: tCat("categoryCredit"),
+      renovation: tCat("categoryRenovation"),
+      supplies: tCat("categorySupplies"),
+      utilities: tCat("categoryUtilities"),
+      maintenance: tCat("categoryMaintenance"),
+      other: tCat("categoryOther"),
+    };
+    return map[c] ?? c;
+  };
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">Description</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Amount</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Logged by</th>
+              <th className="px-4 py-3 font-medium">{t("columnDescription")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnCategory")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnAmount")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnDate")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnLoggedBy")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {expenses.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                  No expenses logged yet.
+                  {t("noExpensesYet")}
                 </td>
               </tr>
             ) : (
               expenses.map((e) => (
                 <tr key={e.id}>
                   <td className="px-4 py-3 font-medium text-foreground">{e.description}</td>
-                  <td className="px-4 py-3 text-muted-foreground capitalize">{e.category}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{categoryLabel(e.category)}</td>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    {money(e.amount, client.currency)}
+                    {money(e.amount, client.currency, locale)}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatDate(e.date)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{formatDate(e.date, locale)}</td>
                   <td className="px-4 py-3 text-muted-foreground">{e.submittedBy}</td>
                 </tr>
               ))
@@ -331,11 +353,6 @@ function ExpensesReadOnly({ client, expenses }: { client: Client; expenses: Expe
 
 /* ------------------------------ requests (to Bonté Service) ------------------------------ */
 
-const REQ_CATEGORY_LABEL: Record<RequisitionCategory, string> = {
-  fund_request: "Fund request",
-  payroll: "Payroll funding",
-};
-
 function RequestsTab({
   client,
   requisitions,
@@ -347,11 +364,15 @@ function RequestsTab({
   period: string;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("schoolAdminView");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = (c: RequisitionCategory) =>
+    c === "payroll" ? t("categoryPayroll") : t("categoryFundRequest");
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="text-sm font-medium text-foreground">
-          {requisitions.length} requests to Bonté Service
+          {t("requestsToTreasury", { count: requisitions.length })}
         </span>
         <NewRequestDialog client={client} period={period} onCreated={onRefresh} />
       </div>
@@ -359,18 +380,18 @@ function RequestsTab({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">Description</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">Requested</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Notes</th>
+              <th className="px-4 py-3 font-medium">{t("columnDescription")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnType")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnRequested")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnNotes")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {requisitions.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                  No requests submitted yet.
+                  {t("noRequestsYet")}
                 </td>
               </tr>
             ) : (
@@ -378,22 +399,26 @@ function RequestsTab({
                 <tr key={r.id}>
                   <td className="px-4 py-3 font-medium text-foreground">{r.description}</td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {REQ_CATEGORY_LABEL[r.category]}
-                    {r.period ? ` · ${periodLabel(r.period)}` : ""}
+                    {categoryLabel(r.category)}
+                    {r.period ? ` · ${periodLabel(r.period, locale)}` : ""}
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    {money(r.amountRequested, client.currency)}
+                    {money(r.amountRequested, client.currency, locale)}
                   </td>
                   <td className="px-4 py-3">
                     <RequisitionStatusBadge status={r.status} />
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {r.status === "paid" &&
-                      `Paid ${money(r.paidAmount ?? 0, client.currency)} via ${r.paymentMethod} · ${timeAgo(r.paidAt ?? r.submittedAt)}`}
+                      t("paidVia", {
+                        amount: money(r.paidAmount ?? 0, client.currency, locale),
+                        method: r.paymentMethod ?? t("paymentMethodNotSpecified"),
+                        time: timeAgo(r.paidAt ?? r.submittedAt, locale),
+                      })}
                     {r.status === "rejected" &&
-                      (r.decisionNote ? `"${r.decisionNote}"` : "No reason given")}
-                    {r.status === "approved" && "Awaiting payout"}
-                    {r.status === "pending" && `Sent ${timeAgo(r.submittedAt)}`}
+                      (r.decisionNote ? `"${r.decisionNote}"` : t("noReasonGiven"))}
+                    {r.status === "approved" && t("awaitingPayout")}
+                    {r.status === "pending" && t("sentAgo", { time: timeAgo(r.submittedAt, locale) })}
                   </td>
                 </tr>
               ))
@@ -414,6 +439,8 @@ function NewRequestDialog({
   period: string;
   onCreated: () => void;
 }) {
+  const t = useTranslations("schoolAdminView");
+  const locale = useLocale() as "en" | "fr";
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<RequisitionCategory>("fund_request");
   const [description, setDescription] = useState("");
@@ -437,14 +464,14 @@ function NewRequestDialog({
         }),
       });
       if (res.ok) {
-        toast.add({ title: "Request sent to Bonté Service", type: "success" });
+        toast.add({ title: t("requestSentToast"), type: "success" });
         setDescription("");
         setAmount("");
         setOpen(false);
         onCreated();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not send request", type: "error" });
+        toast.add({ title: data.error || t("requestFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -457,45 +484,42 @@ function NewRequestDialog({
         render={
           <Button size="sm">
             <Send className="size-3.5" />
-            New Request
+            {t("newRequest")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Send request to Bonté Service</DialogTitle>
+          <DialogTitle>{t("sendRequestTitle")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="req-category">Type</Label>
+            <Label htmlFor="req-category">{t("type")}</Label>
             <NativeSelect
               id="req-category"
               className="w-full"
               value={category}
               onChange={(e) => setCategory(e.target.value as RequisitionCategory)}
             >
-              {Object.entries(REQ_CATEGORY_LABEL).map(([value, label]) => (
-                <NativeSelectOption key={value} value={value}>
-                  {label}
-                </NativeSelectOption>
-              ))}
+              <NativeSelectOption value="fund_request">{t("categoryFundRequest")}</NativeSelectOption>
+              <NativeSelectOption value="payroll">{t("categoryPayroll")}</NativeSelectOption>
             </NativeSelect>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="req-desc">Description</Label>
+            <Label htmlFor="req-desc">{t("description")}</Label>
             <Input
               id="req-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={
                 category === "payroll"
-                  ? `Salaries for ${periodLabel(period)}`
-                  : "What is this for?"
+                  ? t("descriptionPlaceholderPayroll", { period: periodLabel(period, locale) })
+                  : t("descriptionPlaceholderOther")
               }
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="req-amount">Amount requested ({client.currency})</Label>
+            <Label htmlFor="req-amount">{t("amountRequested", { currency: client.currency })}</Label>
             <Input
               id="req-amount"
               type="number"
@@ -507,10 +531,10 @@ function NewRequestDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Sending…" : "Send Request"}
+            {loading ? t("sending") : t("sendRequest")}
           </Button>
         </DialogFooter>
       </DialogContent>

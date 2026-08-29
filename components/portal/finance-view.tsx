@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Eye, ReceiptText, Search, Users, FileBarChart } from "lucide-react";
 import { money, periodLabel } from "@/lib/format";
 import { paymentFor, type SchoolFinancials } from "@/lib/aggregate";
@@ -42,6 +43,8 @@ export function FinanceView({
   financials: SchoolFinancials;
   period: string;
 }) {
+  const t = useTranslations("financeView");
+  const locale = useLocale() as "en" | "fr";
   const [tab, setTab] = useState<Tab>("payslips");
   const [query, setQuery] = useState("");
   const byId = new Map(employees.map((e) => [e.id, e]));
@@ -52,6 +55,12 @@ export function FinanceView({
     return !q || emp?.name.toLowerCase().includes(q);
   });
 
+  const TAB_DEFS = [
+    { key: "payslips" as const, label: t("tabPayslips"), icon: ReceiptText },
+    { key: "students" as const, label: t("tabStudents"), icon: Users },
+    { key: "report" as const, label: t("tabReport"), icon: FileBarChart },
+  ];
+
   return (
     <div>
       <div className="mb-6">
@@ -59,27 +68,23 @@ export function FinanceView({
           {client.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Verify fee status and payslips — read-only
+          {t("readOnlySubtitle")}
         </p>
       </div>
 
       <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {[
-          { key: "payslips" as const, label: "Payslips", icon: ReceiptText },
-          { key: "students" as const, label: "Students", icon: Users },
-          { key: "report" as const, label: "Report", icon: FileBarChart },
-        ].map((t) => (
+        {TAB_DEFS.map((tItem) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tItem.key}
+            onClick={() => setTab(tItem.key)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === tItem.key
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <t.icon className="size-3.5" />
-            {t.label}
+            <tItem.icon className="size-3.5" />
+            {tItem.label}
           </button>
         ))}
       </div>
@@ -91,7 +96,7 @@ export function FinanceView({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name…"
+              placeholder={t("searchPlaceholder")}
               className="h-9 pl-9"
             />
           </div>
@@ -99,7 +104,7 @@ export function FinanceView({
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
               <ReceiptText className="size-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">No payslips to show.</p>
+              <p className="text-sm text-muted-foreground">{t("noPayslips")}</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -107,11 +112,11 @@ export function FinanceView({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                      <th className="px-4 py-3 font-medium">Employee</th>
-                      <th className="px-4 py-3 font-medium">Period</th>
-                      <th className="px-4 py-3 font-medium">Net Pay</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 text-right font-medium">View</th>
+                      <th className="px-4 py-3 font-medium">{t("columnEmployee")}</th>
+                      <th className="px-4 py-3 font-medium">{t("columnPeriod")}</th>
+                      <th className="px-4 py-3 font-medium">{t("columnNetPay")}</th>
+                      <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+                      <th className="px-4 py-3 text-right font-medium">{t("columnView")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -121,17 +126,17 @@ export function FinanceView({
                         <tr key={p.id}>
                           <td className="px-4 py-3">
                             <div className="font-medium text-foreground">
-                              {emp?.name ?? "Unknown"}
+                              {emp?.name ?? t("unknown")}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {emp?.position ?? ""}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {periodLabel(p.period)}
+                            {periodLabel(p.period, locale)}
                           </td>
                           <td className="px-4 py-3 font-medium text-foreground">
-                            {money(p.net, client.currency)}
+                            {money(p.net, client.currency, locale)}
                           </td>
                           <td className="px-4 py-3">
                             <PayslipStatusBadge status={p.status} />
@@ -139,14 +144,14 @@ export function FinanceView({
                           <td className="px-4 py-3 text-right">
                             <PortalPayslipDialog
                               payslip={p}
-                              employeeName={emp?.name ?? "Unknown"}
+                              employeeName={emp?.name ?? t("unknown")}
                               employeePosition={emp?.position ?? ""}
                               currency={client.currency}
                               schoolName={client.name}
                               trigger={
                                 <Button variant="outline" size="sm">
                                   <Eye className="size-3.5" />
-                                  View
+                                  {t("view")}
                                 </Button>
                               }
                             />
@@ -168,17 +173,17 @@ export function FinanceView({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                  <th className="px-4 py-3 font-medium">Student</th>
-                  <th className="px-4 py-3 font-medium">Class</th>
-                  <th className="px-4 py-3 font-medium">Status — {periodLabel(period)}</th>
-                  <th className="px-4 py-3 text-right font-medium">Amount paid</th>
+                  <th className="px-4 py-3 font-medium">{t("columnStudent")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnClass")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columnStatusPeriod", { period: periodLabel(period, locale) })}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t("columnAmountPaid")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {students.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
-                      No students enrolled yet.
+                      {t("noStudentsYet")}
                     </td>
                   </tr>
                 ) : (
@@ -192,7 +197,7 @@ export function FinanceView({
                           <FeeStatusBadge status={record?.status ?? "unpaid"} />
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-foreground">
-                          {money(record?.amountPaid ?? 0, client.currency)}
+                          {money(record?.amountPaid ?? 0, client.currency, locale)}
                         </td>
                       </tr>
                     );
@@ -207,39 +212,39 @@ export function FinanceView({
       {tab === "report" && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="text-xs text-muted-foreground">Students</div>
+            <div className="text-xs text-muted-foreground">{t("students")}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
               {financials.studentCount}
             </div>
           </div>
           <div className="rounded-2xl border border-success/30 bg-success/5 p-4 shadow-sm">
-            <div className="text-xs text-muted-foreground">Fees collected — {periodLabel(period)}</div>
+            <div className="text-xs text-muted-foreground">{t("feesCollected", { period: periodLabel(period, locale) })}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-              {money(financials.feesCollected, client.currency)}
+              {money(financials.feesCollected, client.currency, locale)}
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="text-xs text-muted-foreground">Fees outstanding</div>
+            <div className="text-xs text-muted-foreground">{t("feesOutstanding")}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-              {money(financials.feesOutstanding, client.currency)}
+              {money(financials.feesOutstanding, client.currency, locale)}
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="text-xs text-muted-foreground">Unpaid students</div>
+            <div className="text-xs text-muted-foreground">{t("unpaidStudents")}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
               {financials.unpaidCount}
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="text-xs text-muted-foreground">Social case students</div>
+            <div className="text-xs text-muted-foreground">{t("socialCaseStudents")}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
               {financials.socialCaseCount}
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="text-xs text-muted-foreground">Expenses this month</div>
+            <div className="text-xs text-muted-foreground">{t("expensesThisMonth")}</div>
             <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-              {money(financials.expensesThisMonth, client.currency)}
+              {money(financials.expensesThisMonth, client.currency, locale)}
             </div>
           </div>
         </div>

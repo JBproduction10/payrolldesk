@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -9,15 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const ROLE_LABEL: Record<string, string> = {
-  super_admin: "Super admin",
-  promoter: "Promoter",
-  school_admin: "School admin",
-  teacher: "Teacher",
-  finance: "Finance staff",
+const ROLE_KEY: Record<string, string> = {
+  super_admin: "roleSuperAdmin",
+  promoter: "rolePromoter",
+  school_admin: "roleSchoolAdmin",
+  teacher: "roleTeacher",
+  finance: "roleFinance",
+  treasury: "roleTreasury",
+  cashier: "roleCashier",
+  intendance: "roleIntendance",
 };
 
 function AcceptInviteForm() {
+  const t = useTranslations("auth.acceptInvite");
+  const tRole = useTranslations("teamPage");
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -35,7 +41,7 @@ function AcceptInviteForm() {
 
   useEffect(() => {
     if (!token) {
-      setCheckError("Missing invite link.");
+      setCheckError(t("missingLink"));
       setChecking(false);
       return;
     }
@@ -43,20 +49,21 @@ function AcceptInviteForm() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
-          setCheckError(data.error || "This invite link is invalid or has expired.");
+          setCheckError(data.error || t("expiredOrInvalid"));
           return;
         }
         setInvite(data);
       })
-      .catch(() => setCheckError("Couldn't reach the server."))
+      .catch(() => setCheckError(t("couldNotReachServer")))
       .finally(() => setChecking(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     if (password !== confirm) {
-      setError("Passwords don't match.");
+      setError(t("passwordsDontMatch"));
       return;
     }
     setLoading(true);
@@ -68,7 +75,7 @@ function AcceptInviteForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not set your password.");
+        setError(data.error || t("errorSetPasswordFailed"));
         setLoading(false);
         return;
       }
@@ -85,14 +92,14 @@ function AcceptInviteForm() {
       router.push(destination);
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("errorGeneric"));
       setLoading(false);
     }
   }
 
   if (checking) {
     return (
-      <AuthCard title="Checking your invite…" description="One moment.">
+      <AuthCard title={t("checkingTitle")} description={t("checkingDescription")}>
         <div className="flex justify-center py-4 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
@@ -102,18 +109,20 @@ function AcceptInviteForm() {
 
   if (checkError || !invite) {
     return (
-      <AuthCard title="Invite not found" description={checkError ?? "This link isn't valid."}>
+      <AuthCard title={t("notFoundTitle")} description={checkError ?? t("notFoundDescriptionFallback")}>
         <Button className="w-full" onClick={() => router.push("/login")}>
-          Go to sign in
+          {t("goToSignIn")}
         </Button>
       </AuthCard>
     );
   }
 
+  const roleLabel = ROLE_KEY[invite.role] ? tRole(ROLE_KEY[invite.role]) : invite.role;
+
   return (
     <AuthCard
-      title="Set your password"
-      description={`Welcome, ${invite.name} — you've been added as ${ROLE_LABEL[invite.role] ?? invite.role}.`}
+      title={t("title")}
+      description={t("descriptionWelcome", { name: invite.name, role: roleLabel })}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
@@ -124,12 +133,12 @@ function AcceptInviteForm() {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <Label>Email</Label>
+          <Label>{t("emailLabel")}</Label>
           <Input value={invite.email} disabled />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="ai-password">Password</Label>
+          <Label htmlFor="ai-password">{t("passwordLabel")}</Label>
           <Input
             id="ai-password"
             type="password"
@@ -138,12 +147,12 @@ function AcceptInviteForm() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
+            placeholder={t("passwordPlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="ai-confirm">Confirm password</Label>
+          <Label htmlFor="ai-confirm">{t("confirmPasswordLabel")}</Label>
           <Input
             id="ai-confirm"
             type="password"
@@ -157,7 +166,7 @@ function AcceptInviteForm() {
 
         <Button type="submit" className="mt-2" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" />}
-          Set password & sign in
+          {t("submit")}
         </Button>
       </form>
     </AuthCard>

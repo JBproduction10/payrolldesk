@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Check, X, Wallet, Clock, CircleCheck, Landmark, Truck, Plus } from "lucide-react";
 import { money, periodLabel, timeAgo } from "@/lib/format";
 import type { Currency, RequisitionCategory, RequisitionStatus, SupplyCategory } from "@/lib/types";
@@ -19,18 +20,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
-
-const CATEGORY_LABEL: Record<RequisitionCategory, string> = {
-  fund_request: "Fund request",
-  payroll: "Payroll funding",
-};
-
-const SUPPLY_CATEGORY_LABEL: Record<SupplyCategory, string> = {
-  uniform: "Uniform",
-  shoes: "Shoes",
-  sweater: "Sweater",
-  other: "Other",
-};
 
 export interface TreasuryRequisition {
   id: string;
@@ -86,6 +75,8 @@ export function TreasuryView({
   period: string;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("treasuryView");
+  const locale = useLocale() as "en" | "fr";
   const [tab, setTab] = useState<Tab>("pending");
   const currencyFor = new Map(clients.map((c) => [c.id, c.currency]));
 
@@ -104,60 +95,62 @@ export function TreasuryView({
     .filter((r) => r.status === "paid")
     .reduce((sum, r) => sum + (r.paidAmount ?? 0), 0);
 
+  const TAB_DEFS = [
+    { key: "pending" as const, label: t("tabPending"), icon: Clock, count: pending.length },
+    { key: "approved" as const, label: t("tabApproved"), icon: Check, count: approved.length },
+    { key: "history" as const, label: t("tabHistory"), icon: CircleCheck, count: history.length },
+    { key: "deliveries" as const, label: t("tabDeliveries"), icon: Truck, count: deliveries.length },
+  ];
+
   return (
     <div>
       <div className="mb-6 flex items-center gap-2">
         <Landmark className="size-6 text-muted-foreground" />
         <div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground">
-            Treasury
+            {t("title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Bonté Service · requests across {clients.length} schools · {periodLabel(period)}
+            {t("subtitle", { count: clients.length, period: periodLabel(period, locale) })}
           </p>
         </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Awaiting your decision</div>
+          <div className="text-xs text-muted-foreground">{t("awaitingDecision")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {pending.length}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Approved, not yet paid</div>
+          <div className="text-xs text-muted-foreground">{t("approvedNotPaid")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
             {approved.length}
           </div>
         </div>
         <div className="rounded-2xl border border-success/30 bg-success/5 p-4 shadow-sm">
-          <div className="text-xs text-muted-foreground">Paid out — all time</div>
+          <div className="text-xs text-muted-foreground">{t("paidAllTime")}</div>
           <div className="mt-1 font-heading text-lg font-semibold text-foreground">
-            {money(totalPaidAllTime)}
+            {money(totalPaidAllTime, "USD", locale)}
           </div>
         </div>
       </div>
 
       <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {[
-          { key: "pending" as const, label: "Pending", icon: Clock, count: pending.length },
-          { key: "approved" as const, label: "Approved", icon: Check, count: approved.length },
-          { key: "history" as const, label: "History", icon: CircleCheck, count: history.length },
-          { key: "deliveries" as const, label: "Deliveries", icon: Truck, count: deliveries.length },
-        ].map((t) => (
+        {TAB_DEFS.map((tItem) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tItem.key}
+            onClick={() => setTab(tItem.key)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === tItem.key
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <t.icon className="size-3.5" />
-            {t.label}
-            {t.count > 0 && <span className="text-xs opacity-70">({t.count})</span>}
+            <tItem.icon className="size-3.5" />
+            {tItem.label}
+            {tItem.count > 0 && <span className="text-xs opacity-70">({tItem.count})</span>}
           </button>
         ))}
       </div>
@@ -198,11 +191,15 @@ function RequisitionList({
   onRefresh: () => void;
   render?: (r: TreasuryRequisition) => ReactNode;
 }) {
+  const t = useTranslations("treasuryView");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = (c: RequisitionCategory) =>
+    c === "payroll" ? t("categoryPayroll") : t("categoryFundRequest");
   if (rows.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
         <Wallet className="size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Nothing here right now.</p>
+        <p className="text-sm text-muted-foreground">{t("nothingHere")}</p>
       </div>
     );
   }
@@ -220,24 +217,30 @@ function RequisitionList({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-foreground">{r.clientName}</span>
                 <span className="text-xs text-muted-foreground">
-                  {CATEGORY_LABEL[r.category]}
-                  {r.period ? ` · ${periodLabel(r.period)}` : ""}
+                  {categoryLabel(r.category)}
+                  {r.period ? ` · ${periodLabel(r.period, locale)}` : ""}
                 </span>
                 <RequisitionStatusBadge status={r.status} />
               </div>
               <p className="mt-1 text-sm text-foreground">{r.description}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Requested by {r.submittedBy} · {timeAgo(r.submittedAt)}
+                {t("requestedBy", { name: r.submittedBy, time: timeAgo(r.submittedAt, locale) })}
                 {r.decidedBy &&
-                  ` · ${r.status === "rejected" ? "Rejected" : "Approved"} by ${r.decidedBy}`}
+                  (r.status === "rejected"
+                    ? t("rejectedBy", { name: r.decidedBy })
+                    : t("approvedBy", { name: r.decidedBy }))}
                 {r.paidAt &&
-                  ` · Paid ${money(r.paidAmount ?? 0, currency)} via ${r.paymentMethod} (${timeAgo(r.paidAt)})`}
+                  t("paidLine", {
+                    amount: money(r.paidAmount ?? 0, currency, locale),
+                    method: r.paymentMethod ?? "",
+                    time: timeAgo(r.paidAt, locale),
+                  })}
                 {r.decisionNote && ` — "${r.decisionNote}"`}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <span className="font-heading text-lg font-semibold text-foreground">
-                {money(r.amountRequested, currency)}
+                {money(r.amountRequested, currency, locale)}
               </span>
               {render?.(r)}
             </div>
@@ -255,6 +258,7 @@ function DecideActions({
   requisition: TreasuryRequisition;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("treasuryView");
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
@@ -269,14 +273,14 @@ function DecideActions({
       });
       if (res.ok) {
         toast.add({
-          title: action === "approve" ? "Requisition approved" : "Requisition rejected",
+          title: action === "approve" ? t("requisitionApprovedToast") : t("requisitionRejectedToast"),
           type: "success",
         });
         setOpen(false);
         onRefresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not update this requisition", type: "error" });
+        toast.add({ title: data.error || t("requisitionUpdateFailedToast"), type: "error" });
       }
     } finally {
       setLoading(null);
@@ -290,35 +294,35 @@ function DecideActions({
           render={
             <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
               <X className="size-3.5" />
-              Reject
+              {t("reject")}
             </Button>
           }
         />
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Reject this request?</DialogTitle>
+            <DialogTitle>{t("rejectTitle")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="reject-note">Reason (optional, shown to the school)</Label>
+            <Label htmlFor="reject-note">{t("rejectReasonLabel")}</Label>
             <Input id="reject-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               variant="destructive"
               disabled={loading !== null}
               onClick={() => decide("reject")}
             >
-              {loading === "reject" ? "Rejecting…" : "Reject"}
+              {loading === "reject" ? t("rejecting") : t("reject")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       <Button size="sm" disabled={loading !== null} onClick={() => decide("approve")}>
         <Check className="size-3.5" />
-        {loading === "approve" ? "Approving…" : "Approve"}
+        {loading === "approve" ? t("approving") : t("approve")}
       </Button>
     </div>
   );
@@ -331,6 +335,7 @@ function MarkPaidAction({
   requisition: TreasuryRequisition;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("treasuryView");
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(String(requisition.amountRequested));
   const [method, setMethod] = useState("");
@@ -352,12 +357,12 @@ function MarkPaidAction({
         }),
       });
       if (res.ok) {
-        toast.add({ title: "Marked as paid", type: "success" });
+        toast.add({ title: t("markedPaidToast"), type: "success" });
         setOpen(false);
         onRefresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not record this payout", type: "error" });
+        toast.add({ title: data.error || t("payoutFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
@@ -366,14 +371,14 @@ function MarkPaidAction({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm"><Wallet className="size-3.5" />Mark paid</Button>} />
+      <DialogTrigger render={<Button size="sm"><Wallet className="size-3.5" />{t("markPaid")}</Button>} />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Record payout — {requisition.clientName}</DialogTitle>
+          <DialogTitle>{t("recordPayoutTitle", { name: requisition.clientName })}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pay-amount">Amount actually paid</Label>
+            <Label htmlFor="pay-amount">{t("amountActuallyPaid")}</Label>
             <Input
               id="pay-amount"
               type="number"
@@ -383,21 +388,21 @@ function MarkPaidAction({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pay-method">Payment method</Label>
+            <Label htmlFor="pay-method">{t("paymentMethod")}</Label>
             <Input
               id="pay-method"
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              placeholder="Bank transfer, mobile money, cash…"
+              placeholder={t("paymentMethodPlaceholder")}
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Recording…" : "Confirm payout"}
+            {loading ? t("recording") : t("confirmPayout")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -414,6 +419,17 @@ function DeliveriesPanel({
   deliveries: TreasuryDelivery[];
   onRefresh: () => void;
 }) {
+  const t = useTranslations("treasuryView");
+  const locale = useLocale() as "en" | "fr";
+  const categoryLabel = (c: SupplyCategory): string => {
+    const map: Record<SupplyCategory, string> = {
+      uniform: t("categoryUniform"),
+      shoes: t("categoryShoes"),
+      sweater: t("categorySweater"),
+      other: t("categoryOther"),
+    };
+    return map[c];
+  };
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-end">
@@ -424,8 +440,7 @@ function DeliveriesPanel({
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card py-16 text-center">
           <Truck className="size-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            Nothing delivered yet — log what you send out so each school's Intendance
-            account can sell against it.
+            {t("nothingDelivered")}
           </p>
         </div>
       ) : (
@@ -439,16 +454,16 @@ function DeliveriesPanel({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-foreground">{d.clientName}</span>
                   <span className="text-xs text-muted-foreground">
-                    {SUPPLY_CATEGORY_LABEL[d.category]} · ref {d.reference}
+                    {categoryLabel(d.category)} · ref {d.reference}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-foreground">{d.itemLabel}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Delivered {d.deliveredAt} · logged by {d.recordedBy} · {timeAgo(d.createdAt)}
+                  {t("deliveredLogged", { date: d.deliveredAt, name: d.recordedBy, time: timeAgo(d.createdAt, locale) })}
                 </p>
               </div>
               <span className="shrink-0 font-heading text-lg font-semibold text-foreground">
-                {d.quantity} units
+                {t("units", { count: d.quantity })}
               </span>
             </div>
           ))}
@@ -465,6 +480,7 @@ function LogDeliveryDialog({
   clients: ClientRef[];
   onRefresh: () => void;
 }) {
+  const t = useTranslations("treasuryView");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
@@ -502,18 +518,25 @@ function LogDeliveryDialog({
         }),
       });
       if (res.ok) {
-        toast.add({ title: "Delivery logged", type: "success" });
+        toast.add({ title: t("deliveryLoggedToast"), type: "success" });
         setOpen(false);
         reset();
         onRefresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.add({ title: data.error || "Could not log this delivery", type: "error" });
+        toast.add({ title: data.error || t("deliveryFailedToast"), type: "error" });
       }
     } finally {
       setLoading(false);
     }
   }
+
+  const SUPPLY_CATEGORIES: { value: SupplyCategory; labelKey: string }[] = [
+    { value: "uniform", labelKey: "categoryUniform" },
+    { value: "shoes", labelKey: "categoryShoes" },
+    { value: "sweater", labelKey: "categorySweater" },
+    { value: "other", labelKey: "categoryOther" },
+  ];
 
   return (
     <Dialog
@@ -527,22 +550,21 @@ function LogDeliveryDialog({
         render={
           <Button size="sm">
             <Plus className="size-3.5" />
-            Log delivery
+            {t("logDelivery")}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Log a delivery</DialogTitle>
+          <DialogTitle>{t("logDeliveryTitle")}</DialogTitle>
           <DialogDescription>
-            Record what Bonté Service is sending out — this is the only way stock enters
-            a school's Intendance account.
+            {t("logDeliveryDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="dd-client">School *</Label>
+            <Label htmlFor="dd-client">{t("school")}</Label>
             <NativeSelect
               id="dd-client"
               className="w-full"
@@ -558,23 +580,23 @@ function LogDeliveryDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="dd-category">Category *</Label>
+            <Label htmlFor="dd-category">{t("category")}</Label>
             <NativeSelect
               id="dd-category"
               className="w-full"
               value={category}
               onChange={(e) => setCategory(e.target.value as SupplyCategory)}
             >
-              {(Object.keys(SUPPLY_CATEGORY_LABEL) as SupplyCategory[]).map((c) => (
-                <NativeSelectOption key={c} value={c}>
-                  {SUPPLY_CATEGORY_LABEL[c]}
+              {SUPPLY_CATEGORIES.map((c) => (
+                <NativeSelectOption key={c.value} value={c.value}>
+                  {t(c.labelKey)}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="dd-qty">Quantity *</Label>
+            <Label htmlFor="dd-qty">{t("quantity")}</Label>
             <Input
               id="dd-qty"
               type="number"
@@ -585,17 +607,17 @@ function LogDeliveryDialog({
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="dd-item">Item *</Label>
+            <Label htmlFor="dd-item">{t("item")}</Label>
             <Input
               id="dd-item"
-              placeholder="e.g. Uniform — Size M"
+              placeholder={t("itemPlaceholder")}
               value={itemLabel}
               onChange={(e) => setItemLabel(e.target.value)}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="dd-date">Delivered on *</Label>
+            <Label htmlFor="dd-date">{t("deliveredOn")}</Label>
             <Input
               id="dd-date"
               type="date"
@@ -605,10 +627,10 @@ function LogDeliveryDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="dd-ref">Reference *</Label>
+            <Label htmlFor="dd-ref">{t("reference")}</Label>
             <Input
               id="dd-ref"
-              placeholder="Delivery note / bordereau #"
+              placeholder={t("referencePlaceholder")}
               value={reference}
               onChange={(e) => setReference(e.target.value)}
             />
@@ -617,10 +639,10 @@ function LogDeliveryDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!valid || loading}>
-            {loading ? "Logging…" : "Log delivery"}
+            {loading ? t("logging") : t("logDelivery")}
           </Button>
         </DialogFooter>
       </DialogContent>

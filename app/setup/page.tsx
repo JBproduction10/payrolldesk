@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 type Availability = "checking" | "available" | "taken" | "error";
 
 export default function SetupPage() {
+  const t = useTranslations("auth.setup");
   const router = useRouter();
   const [availability, setAvailability] = useState<Availability>("checking");
   const [name, setName] = useState("");
@@ -40,13 +42,13 @@ export default function SetupPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not create your account.");
+        setError(data.error || t("errorCreateAccount"));
         setLoading(false);
         return;
       }
       const signInRes = await signIn("credentials", { email, password, redirect: false });
       if (signInRes?.error) {
-        setError("Account created — please sign in.");
+        setError(t("errorCreatedPleaseSignIn"));
         setLoading(false);
         router.push("/login");
         return;
@@ -54,14 +56,14 @@ export default function SetupPage() {
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("errorGeneric"));
       setLoading(false);
     }
   }
 
   if (availability === "checking") {
     return (
-      <AuthCard title="Checking…" description="One moment.">
+      <AuthCard title={t("checkingTitle")} description={t("checkingDescription")}>
         <div className="flex justify-center py-4 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
@@ -71,17 +73,13 @@ export default function SetupPage() {
 
   if (availability === "taken") {
     return (
-      <AuthCard
-        title="Already set up"
-        description="This workspace already has an administrator."
-      >
+      <AuthCard title={t("takenTitle")} description={t("takenDescription")}>
         <div className="flex items-start gap-2 rounded-lg bg-secondary px-3 py-2.5 text-sm text-secondary-foreground">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-          Ask your administrator to add you from the Team & Access page — you'll get
-          an email invite to set your own password.
+          {t("takenBody")}
         </div>
         <Button className="mt-4 w-full" render={<Link href="/login" />} nativeButton={false}>
-          Go to sign in
+          {t("goToSignIn")}
         </Button>
       </AuthCard>
     );
@@ -89,19 +87,16 @@ export default function SetupPage() {
 
   if (availability === "error") {
     return (
-      <AuthCard title="Can't reach the database" description="Please try again shortly.">
+      <AuthCard title={t("dbErrorTitle")} description={t("dbErrorDescription")}>
         <p className="text-sm text-muted-foreground">
-          Make sure <code>MONGODB_URI</code> is configured, then reload this page.
+          {t("dbErrorBodyPrefix")} <code>MONGODB_URI</code> {t("dbErrorBodySuffix")}
         </p>
       </AuthCard>
     );
   }
 
   return (
-    <AuthCard
-      title="Set up your workspace"
-      description="Create the first administrator account — this only works once."
-    >
+    <AuthCard title={t("title")} description={t("description")}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
           <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -111,19 +106,19 @@ export default function SetupPage() {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="setup-name">Full name</Label>
+          <Label htmlFor="setup-name">{t("nameLabel")}</Label>
           <Input
             id="setup-name"
             autoComplete="name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Amara Okafor"
+            placeholder={t("namePlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="setup-email">Email</Label>
+          <Label htmlFor="setup-email">{t("emailLabel")}</Label>
           <Input
             id="setup-email"
             type="email"
@@ -131,12 +126,12 @@ export default function SetupPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
+            placeholder={t("emailPlaceholder")}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="setup-password">Password</Label>
+          <Label htmlFor="setup-password">{t("passwordLabel")}</Label>
           <Input
             id="setup-password"
             type="password"
@@ -145,13 +140,13 @@ export default function SetupPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
+            placeholder={t("passwordPlaceholder")}
           />
         </div>
 
         <Button type="submit" className="mt-2" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" />}
-          Create workspace
+          {t("submit")}
         </Button>
       </form>
     </AuthCard>
