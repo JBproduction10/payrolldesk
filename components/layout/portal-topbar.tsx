@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "./language-switcher";
+import { NotificationBell } from "./notification-bell";
 
 const ROLE_LABEL_KEY: Record<string, string> = {
   promoter: "rolePromoter",
@@ -44,6 +45,7 @@ export function PortalTopbar() {
           </div>
           <div className="text-xs text-muted-foreground">{session?.user?.email}</div>
         </div>
+        <NotificationBell />
         <LanguageSwitcher />
         <Button
           variant="ghost"

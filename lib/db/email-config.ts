@@ -23,6 +23,8 @@ export interface EmailConfigDoc {
     passwordReset: boolean;
     payslip: boolean;
     feeReminder: boolean;
+    /** Covers both "a requisition needs Treasury's attention" and "yours was decided". */
+    requisition: boolean;
   };
   updatedAt: string;
 }
@@ -34,6 +36,7 @@ export const DEFAULT_NOTIFICATIONS: EmailConfigDoc["notifications"] = {
   passwordReset: true,
   payslip: true,
   feeReminder: true,
+  requisition: true,
 };
 
 function collection() {

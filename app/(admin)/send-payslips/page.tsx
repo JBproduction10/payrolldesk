@@ -66,6 +66,7 @@ export default function SendPayslipsPage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 to: employee.email,
+                employeeId: employee.id,
                 employeeName: employee.name,
                 schoolName: activeClient.name,
                 periodLabel: periodLabel(payslip.period, locale),

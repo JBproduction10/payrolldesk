@@ -230,6 +230,8 @@ export interface Requisition {
   period?: string;
   status: RequisitionStatus;
   submittedBy: string; // display name of whoever submitted it
+  /** Account id of whoever submitted it, so a decision can notify them directly. Absent on older rows recorded before this field existed. */
+  submittedByUserId?: ID;
   submittedAt: string;
   decidedBy?: string;
   decidedAt?: string;
@@ -361,6 +363,42 @@ export interface AuditLogEntry {
   entityLabel: string;
   details?: string;
   at: string;
+}
+
+/* --------------------------- in-app notifications --------------------------- */
+
+export type NotificationType =
+  | "requisition_submitted"
+  | "requisition_approved"
+  | "requisition_rejected"
+  | "requisition_paid"
+  | "team_invited"
+  | "payslip_sent"
+  | "payslip_failed"
+  | "fee_reminder_sent"
+  | "fee_reminder_failed";
+
+/**
+ * One row per recipient account — a notification fanned out to five people
+ * (e.g. Treasury on a new requisition) is five rows, each with its own
+ * `read` state, rather than one row with a list of readers. Simpler to
+ * query ("my unread count") at the cost of some duplication, which is fine
+ * at this volume.
+ */
+export interface Notification {
+  id: ID;
+  orgOwnerId: ID;
+  /** Which account this row is for. */
+  userId: ID;
+  /** School this relates to, if any — absent for org-wide events (e.g. a new team invite). */
+  clientId: ID | null;
+  type: NotificationType;
+  title: string;
+  message: string;
+  /** Where clicking the notification should take the user, e.g. "/portal". */
+  link?: string;
+  read: boolean;
+  createdAt: string;
 }
 
 /** What a non-super_admin account is scoped to. */

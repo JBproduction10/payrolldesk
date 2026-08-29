@@ -56,12 +56,14 @@ let indexesEnsured: Promise<void> | null = null;
 
 function ensureIndexes(db: Db): Promise<void> {
   if (!indexesEnsured) {
-    indexesEnsured = db
-      .collection("users")
-      .createIndex({ email: 1 }, { unique: true })
+    indexesEnsured = Promise.all([
+      db.collection("users").createIndex({ email: 1 }, { unique: true }),
+      db.collection("notifications").createIndex({ orgOwnerId: 1, userId: 1, createdAt: -1 }),
+      db.collection("notifications").createIndex({ id: 1 }, { unique: true }),
+    ])
       .then(() => undefined)
       .catch((err) => {
-        console.error("Could not ensure users.email unique index:", err);
+        console.error("Could not ensure indexes:", err);
         indexesEnsured = null; // let the next call retry
       });
   }

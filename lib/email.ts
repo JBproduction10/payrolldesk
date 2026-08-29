@@ -281,6 +281,105 @@ function renderFeeReminderHtml(params: FeeReminderEmailParams): string {
   `;
 }
 
+/* --------------------------- requisition emails --------------------------- */
+
+export interface RequisitionSubmittedEmailParams {
+  orgOwnerId: string;
+  to: string;
+  treasuryName: string;
+  schoolName: string;
+  submittedBy: string;
+  categoryLabel: string;
+  description: string;
+  amountRequested: number;
+  currency: string;
+  link: string;
+}
+
+/** Notifies one Treasury account by email that a new requisition needs a decision. */
+export async function sendRequisitionSubmittedEmail(
+  params: RequisitionSubmittedEmailParams,
+): Promise<{ sent: boolean }> {
+  const result = await emailService.send(
+    params.orgOwnerId,
+    {
+      to: params.to,
+      subject: `New ${params.categoryLabel} from ${params.schoolName}`,
+      html: renderRequisitionSubmittedHtml(params),
+    },
+    "requisition",
+  );
+  if (!result.success) {
+    console.error(
+      `[requisition email failed] ${params.to}: ${result.error ?? "unknown error"} — new ${params.categoryLabel} from ${params.schoolName}`,
+    );
+  }
+  return { sent: result.success };
+}
+
+function renderRequisitionSubmittedHtml(params: RequisitionSubmittedEmailParams): string {
+  return wrapEmailHtml({
+    heading: "New requisition needs a decision",
+    body: `Hi ${escapeHtml(params.treasuryName)}, ${escapeHtml(params.submittedBy)} at
+      <strong>${escapeHtml(params.schoolName)}</strong> submitted a ${escapeHtml(params.categoryLabel)}
+      for ${money(params.amountRequested, params.currency)}: ${escapeHtml(params.description)}.`,
+    buttonLabel: "Review requisition",
+    link: params.link,
+    footnote: "You're receiving this because you're set up as Treasury on Payroll Desk.",
+  });
+}
+
+export interface RequisitionDecisionEmailParams {
+  orgOwnerId: string;
+  to: string;
+  submittedByName: string;
+  schoolName: string;
+  categoryLabel: string;
+  description: string;
+  amountRequested: number;
+  currency: string;
+  decision: "approved" | "rejected";
+  decisionNote?: string;
+  link: string;
+}
+
+/** Notifies whoever submitted a requisition once Treasury has approved or rejected it. */
+export async function sendRequisitionDecisionEmail(
+  params: RequisitionDecisionEmailParams,
+): Promise<{ sent: boolean }> {
+  const verb = params.decision === "approved" ? "approved" : "rejected";
+  const result = await emailService.send(
+    params.orgOwnerId,
+    {
+      to: params.to,
+      subject: `Your requisition was ${verb} — ${params.schoolName}`,
+      html: renderRequisitionDecisionHtml(params),
+    },
+    "requisition",
+  );
+  if (!result.success) {
+    console.error(
+      `[requisition email failed] ${params.to}: ${result.error ?? "unknown error"} — requisition ${verb}`,
+    );
+  }
+  return { sent: result.success };
+}
+
+function renderRequisitionDecisionHtml(params: RequisitionDecisionEmailParams): string {
+  const approved = params.decision === "approved";
+  return wrapEmailHtml({
+    heading: approved ? "Your requisition was approved" : "Your requisition was rejected",
+    body: `Hi ${escapeHtml(params.submittedByName)}, your ${escapeHtml(params.categoryLabel)} for
+      ${money(params.amountRequested, params.currency)} (${escapeHtml(params.description)}) has been
+      <strong>${approved ? "approved" : "rejected"}</strong> by Treasury.${
+        params.decisionNote ? ` Note: ${escapeHtml(params.decisionNote)}` : ""
+      }`,
+    buttonLabel: "View requisition",
+    link: params.link,
+    footnote: "This is an automated message from Payroll Desk.",
+  });
+}
+
 /* --------------------------------- shared --------------------------------- */
 
 function wrapEmailHtml(params: {

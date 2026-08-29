@@ -29,6 +29,16 @@
     "auditLog": "Audit Log",
     "emailSettings": "Email Settings"
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You're all caught up.",
+    "markAllRead": "Mark all as read",
+    "loadError": "Couldn't load notifications.",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  },
   "topbar": {
     "searchPlaceholder": "Search employees, departments…",
     "employees": "Employees",
@@ -464,6 +474,8 @@
     "notifPayslipHint": "Sent from Send Payslips",
     "notifFeeReminderLabel": "Fee reminders",
     "notifFeeReminderHint": "Sent to guardians from the Students page",
+    "notifRequisitionLabel": "Requisitions",
+    "notifRequisitionHint": "Sent to Treasury on a new request, and back to the submitter once it's decided",
     "sendTestTitle": "Send a test email",
     "sendTestDescription": "Uses whatever is currently saved above (save first if you just changed something).",
     "sendTest": "Send test"

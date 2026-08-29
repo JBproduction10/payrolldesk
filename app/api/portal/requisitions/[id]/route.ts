@@ -1,6 +1,91 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import auth from "@/auth";
-import { decideRequisitionScoped, markRequisitionPaidScoped } from "@/lib/db/workspace";
+import {
+  CATEGORY_LABEL,
+  decideRequisitionScoped,
+  getWorkspace,
+  markRequisitionPaidScoped,
+} from "@/lib/db/workspace";
+import { findUserById, listUserIdsByRole } from "@/lib/db/users";
+import { notifyUsers } from "@/lib/db/notifications";
+import { sendRequisitionDecisionEmail } from "@/lib/email";
+import type { Requisition } from "@/lib/types";
+
+async function baseUrl() {
+  const h = await headers();
+  const host = h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  return process.env.NEXTAUTH_URL || (host ? `${proto}://${host}` : "http://localhost:3000");
+}
+
+/**
+ * Best-effort: notifies the person who submitted a requisition (in-app +
+ * email), plus every school_admin at that school, that it's been decided
+ * or paid. Never lets a notification hiccup fail the underlying action —
+ * callers just fire this after the mutation succeeds.
+ */
+async function notifyRequisitionUpdate(
+  orgOwnerId: string,
+  requisition: Requisition,
+  kind: "requisition_approved" | "requisition_rejected" | "requisition_paid",
+) {
+  try {
+    const [state, schoolAdminIds] = await Promise.all([
+      getWorkspace(orgOwnerId),
+      listUserIdsByRole(orgOwnerId, ["school_admin"], requisition.clientId),
+    ]);
+    const client = state.clients.find((c) => c.id === requisition.clientId);
+    const categoryLabel = CATEGORY_LABEL[requisition.category];
+
+    const recipientIds = requisition.submittedByUserId
+      ? [requisition.submittedByUserId, ...schoolAdminIds]
+      : schoolAdminIds;
+
+    const title =
+      kind === "requisition_paid"
+        ? "Requisition paid"
+        : kind === "requisition_approved"
+          ? "Requisition approved"
+          : "Requisition rejected";
+    const message =
+      kind === "requisition_paid"
+        ? `Your ${categoryLabel} for ${requisition.amountRequested} (${requisition.description}) has been paid out.`
+        : `Your ${categoryLabel} for ${requisition.amountRequested} (${requisition.description}) was ${
+            kind === "requisition_approved" ? "approved" : "rejected"
+          }${requisition.decisionNote ? ` — ${requisition.decisionNote}` : ""}.`;
+
+    await notifyUsers(recipientIds, {
+      orgOwnerId,
+      clientId: requisition.clientId,
+      type: kind,
+      title,
+      message,
+      link: "/portal",
+    });
+
+    if (client && requisition.submittedByUserId && kind !== "requisition_paid") {
+      const submitter = await findUserById(requisition.submittedByUserId);
+      if (submitter) {
+        await sendRequisitionDecisionEmail({
+          orgOwnerId,
+          to: submitter.email,
+          submittedByName: submitter.name,
+          schoolName: client.name,
+          categoryLabel,
+          description: requisition.description,
+          amountRequested: requisition.amountRequested,
+          currency: client.currency,
+          decision: kind === "requisition_approved" ? "approved" : "rejected",
+          decisionNote: requisition.decisionNote,
+          link: `${await baseUrl()}/portal`,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Failed to notify requisition update:", err);
+  }
+}
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -25,13 +110,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   try {
     if (body.action === "approve" || body.action === "reject") {
-      await decideRequisitionScoped(
+      const requisition = await decideRequisitionScoped(
         session.user.orgOwnerId,
         id,
         body.action === "approve" ? "approved" : "rejected",
         body.note?.trim() || undefined,
         actor,
       );
+      if (requisition) {
+        await notifyRequisitionUpdate(
+          session.user.orgOwnerId,
+          requisition,
+          body.action === "approve" ? "requisition_approved" : "requisition_rejected",
+        );
+      }
       return NextResponse.json({ ok: true });
     }
 
@@ -42,13 +134,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           { status: 400 },
         );
       }
-      await markRequisitionPaidScoped(
+      const requisition = await markRequisitionPaidScoped(
         session.user.orgOwnerId,
         id,
         Number(body.paidAmount),
         body.paymentMethod.trim(),
         actor,
       );
+      if (requisition) {
+        await notifyRequisitionUpdate(session.user.orgOwnerId, requisition, "requisition_paid");
+      }
       return NextResponse.json({ ok: true });
     }
 

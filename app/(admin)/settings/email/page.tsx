@@ -40,6 +40,7 @@ interface EmailConfigView {
     passwordReset: boolean;
     payslip: boolean;
     feeReminder: boolean;
+    requisition: boolean;
   };
   configured: boolean;
   updatedAt: string | null;
@@ -56,6 +57,7 @@ const NOTIFICATION_LABEL_KEY: Record<keyof EmailConfigView["notifications"], { l
   passwordReset: { labelKey: "notifPasswordResetLabel", hintKey: "notifPasswordResetHint" },
   payslip: { labelKey: "notifPayslipLabel", hintKey: "notifPayslipHint" },
   feeReminder: { labelKey: "notifFeeReminderLabel", hintKey: "notifFeeReminderHint" },
+  requisition: { labelKey: "notifRequisitionLabel", hintKey: "notifRequisitionHint" },
 };
 
 export default function EmailSettingsPage() {

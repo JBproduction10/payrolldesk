@@ -50,6 +50,35 @@ export async function listTeamMembers(orgOwnerId: string): Promise<UserDoc[]> {
     .toArray();
 }
 
+/**
+ * Account ids for every active member matching one of `roles` — used to fan
+ * out notifications (e.g. every "treasury" account org-wide, or every
+ * "school_admin" scoped to one school). Pass `clientId` to scope the lookup
+ * to one school; omit it for org-wide roles like "treasury" that aren't
+ * tied to any single client. Includes the org owner themselves when
+ * "super_admin" is one of `roles`, since they're a real recipient too.
+ */
+export async function listUserIdsByRole(
+  orgOwnerId: string,
+  roles: Role[],
+  clientId?: string | null,
+): Promise<string[]> {
+  const users = await usersCollection();
+  const filter: Record<string, unknown> = { orgOwnerId, role: { $in: roles } };
+  if (clientId !== undefined) filter.clientId = clientId;
+  const rows = await users.find(filter, { projection: { _id: 1 } }).toArray();
+  return rows.map((r) => r._id);
+}
+
+/** The team account (if any) representing a given employee — used to notify a linked "teacher" login about their own payslip. */
+export async function findUserByEmployeeId(
+  orgOwnerId: string,
+  employeeId: string,
+): Promise<UserDoc | null> {
+  const users = await usersCollection();
+  return users.findOne({ orgOwnerId, employeeId });
+}
+
 /** True once any account exists at all — used to lock the one-time /setup route. */
 export async function hasAnyUser(): Promise<boolean> {
   const users = await usersCollection();

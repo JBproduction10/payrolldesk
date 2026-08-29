@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import auth, { authOptions } from "@/auth";
 import { createTeamMember, listTeamMembers } from "@/lib/db/users";
 import { appendTeamAuditLog } from "@/lib/db/workspace";
+import { notifyUsers } from "@/lib/db/notifications";
 import { sendInviteEmail } from "@/lib/email";
 import type { Role } from "@/lib/types";
 
@@ -133,6 +134,21 @@ export async function POST(req: Request) {
       `Invited ${member.name} (${member.email}) as ${ROLE_LABEL[assignedRole]}`,
       { id: session.user.id, name: session.user.name ?? "Super admin", role: session.user.role },
     );
+
+    // Waiting for them once they log in for the first time — best-effort,
+    // never blocks account creation.
+    try {
+      await notifyUsers([member._id], {
+        orgOwnerId: session.user.orgOwnerId,
+        clientId: member.clientId,
+        type: "team_invited",
+        title: "Welcome to Payroll Desk",
+        message: `You've been added as ${ROLE_LABEL[assignedRole]} by ${session.user.name ?? "your organisation"}.`,
+        link: "/portal",
+      });
+    } catch (notifyErr) {
+      console.error("Failed to create welcome notification:", notifyErr);
+    }
 
     return NextResponse.json({
       id: member._id,

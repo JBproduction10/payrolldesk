@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { Search, Bell, Menu, RotateCcw, LogOut } from "lucide-react";
+import { Search, Menu, RotateCcw, LogOut } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { ClientSwitcher } from "./client-switcher";
 import { MobileNav } from "./mobile-nav";
 import { LanguageSwitcher } from "./language-switcher";
+import { NotificationBell } from "./notification-bell";
 
 export function Topbar() {
   const t = useTranslations("topbar");
@@ -137,10 +138,7 @@ export function Topbar() {
 
       <LanguageSwitcher />
 
-      <Button variant="ghost" size="icon" className="relative shrink-0">
-        <Bell className="size-5" />
-        <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-brand-gold" />
-      </Button>
+      <NotificationBell />
 
       <DropdownMenu>
         <DropdownMenuTrigger className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-olive text-sm font-semibold text-white outline-none">

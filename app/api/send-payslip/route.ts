@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import auth, { authOptions } from "@/auth";
 import { sendPayslipEmail, type PayslipEmailLine } from "@/lib/email";
+import { findUserByEmployeeId } from "@/lib/db/users";
+import { notifyUsers } from "@/lib/db/notifications";
 
 interface SendPayslipBody {
   to?: string;
+  employeeId?: string;
   employeeName?: string;
   schoolName?: string;
   periodLabel?: string;
@@ -30,6 +33,7 @@ export async function POST(req: Request) {
 
   const {
     to,
+    employeeId,
     employeeName,
     schoolName,
     periodLabel,
@@ -70,6 +74,29 @@ export async function POST(req: Request) {
       totalDeductions,
       net,
     });
+
+    // If this employee has their own "teacher" login, let them know
+    // in-app too — best-effort, never blocks the email result above.
+    if (employeeId) {
+      try {
+        const linkedUser = await findUserByEmployeeId(session.user.orgOwnerId, employeeId);
+        if (linkedUser) {
+          await notifyUsers([linkedUser._id], {
+            orgOwnerId: session.user.orgOwnerId,
+            clientId: linkedUser.clientId,
+            type: result.sent ? "payslip_sent" : "payslip_failed",
+            title: result.sent ? "Payslip sent" : "Payslip delivery failed",
+            message: result.sent
+              ? `Your ${periodLabel} payslip was emailed to ${to}.`
+              : `We couldn't email your ${periodLabel} payslip to ${to} — contact your administrator.`,
+            link: "/portal",
+          });
+        }
+      } catch (notifyErr) {
+        console.error("Failed to create payslip notification:", notifyErr);
+      }
+    }
+
     return NextResponse.json(result);
   } catch (err) {
     console.error("Failed to send payslip email:", err);

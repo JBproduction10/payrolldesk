@@ -329,7 +329,7 @@ export async function removeExpenseScoped(
 // control point the client specifically asked for to curb Treasury-side
 // leakage.
 
-const CATEGORY_LABEL: Record<Requisition["category"], string> = {
+export const CATEGORY_LABEL: Record<Requisition["category"], string> = {
   fund_request: "fund request",
   payroll: "payroll funding request",
 };
@@ -354,6 +354,7 @@ export async function submitRequisitionScoped(
     period: input.period,
     status: "pending",
     submittedBy: actor.name,
+    submittedByUserId: actor.id,
     submittedAt: new Date().toISOString(),
   };
   await mutateWorkspace(orgOwnerId, (s) =>
@@ -370,7 +371,9 @@ export async function submitRequisitionScoped(
 
 /**
  * Treasury approves or rejects a pending requisition. Only "treasury" role
- * should ever call this — enforced by the API route, not here.
+ * should ever call this — enforced by the API route, not here. Returns the
+ * updated requisition (or null if it wasn't pending) so the route can
+ * notify the submitter without a second lookup.
  */
 export async function decideRequisitionScoped(
   orgOwnerId: string,
@@ -378,8 +381,8 @@ export async function decideRequisitionScoped(
   decision: "approved" | "rejected",
   note: string | undefined,
   actor: LogActor,
-): Promise<void> {
-  await mutateWorkspace(orgOwnerId, (s) => {
+): Promise<Requisition | null> {
+  const state = await mutateWorkspace(orgOwnerId, (s) => {
     const before = s.requisitions.find((r) => r.id === requisitionId);
     if (!before || before.status !== "pending") return s;
     const next = {
@@ -405,17 +408,22 @@ export async function decideRequisitionScoped(
       true,
     );
   });
+  return state.requisitions.find((r) => r.id === requisitionId && r.status === decision) ?? null;
 }
 
-/** Treasury records that an already-approved requisition has actually been paid out. */
+/**
+ * Treasury records that an already-approved requisition has actually been
+ * paid out. Returns the updated requisition (or null if it wasn't
+ * approved) so the route can notify the submitter.
+ */
 export async function markRequisitionPaidScoped(
   orgOwnerId: string,
   requisitionId: string,
   paidAmount: number,
   paymentMethod: string,
   actor: LogActor,
-): Promise<void> {
-  await mutateWorkspace(orgOwnerId, (s) => {
+): Promise<Requisition | null> {
+  const state = await mutateWorkspace(orgOwnerId, (s) => {
     const before = s.requisitions.find((r) => r.id === requisitionId);
     if (!before || before.status !== "approved") return s;
     const next = {
@@ -441,6 +449,7 @@ export async function markRequisitionPaidScoped(
       true,
     );
   });
+  return state.requisitions.find((r) => r.id === requisitionId && r.status === "paid") ?? null;
 }
 
 /* --------------------- scoped: supplies / Intendance --------------------- */

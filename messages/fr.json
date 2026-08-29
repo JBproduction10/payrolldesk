@@ -29,6 +29,16 @@
     "auditLog": "Journal d'audit",
     "emailSettings": "Paramètres e-mail"
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Tout est à jour.",
+    "markAllRead": "Tout marquer comme lu",
+    "loadError": "Impossible de charger les notifications.",
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {count}min",
+    "hoursAgo": "il y a {count}h",
+    "daysAgo": "il y a {count}j"
+  },
   "topbar": {
     "searchPlaceholder": "Rechercher employés, départements…",
     "employees": "Employés",
@@ -455,6 +465,8 @@
     "notifPayslipHint": "Envoyé depuis Envoyer les fiches de paie",
     "notifFeeReminderLabel": "Rappels de frais",
     "notifFeeReminderHint": "Envoyé aux tuteurs depuis la page Élèves",
+    "notifRequisitionLabel": "Réquisitions",
+    "notifRequisitionHint": "Envoyé à la Trésorerie pour toute nouvelle demande, et au demandeur une fois la décision prise",
     "sendTestTitle": "Envoyer un e-mail de test",
     "sendTestDescription": "Utilise ce qui est actuellement enregistré ci-dessus (enregistrez d'abord si vous venez de modifier quelque chose).",
     "sendTest": "Envoyer le test"

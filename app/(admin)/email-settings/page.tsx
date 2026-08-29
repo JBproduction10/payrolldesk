@@ -28,6 +28,7 @@ const NOTIFICATION_LABEL: Record<EmailNotificationType, string> = {
   passwordReset: "Password reset links",
   payslip: "Payslip delivery",
   feeReminder: "Fee reminders",
+  requisition: "Requisitions",
 };
 
 export default function EmailSettingsPage() {
