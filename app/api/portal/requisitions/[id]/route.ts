@@ -4,6 +4,7 @@ import auth from "@/auth";
 import {
   CATEGORY_LABEL,
   decideRequisitionScoped,
+  generatePayslipsForPaidPayrollScoped,
   getWorkspace,
   markRequisitionPaidScoped,
 } from "@/lib/db/workspace";
@@ -24,11 +25,17 @@ async function baseUrl() {
  * email), plus every school_admin at that school, that it's been decided
  * or paid. Never lets a notification hiccup fail the underlying action —
  * callers just fire this after the mutation succeeds.
+ *
+ * A paid "payroll" requisition additionally notifies every super_admin:
+ * Bonté Service (Treasury) has released the funds for that period, which
+ * is the platform's signal for the super_admin to generate and send that
+ * school's payslips.
  */
 async function notifyRequisitionUpdate(
   orgOwnerId: string,
   requisition: Requisition,
   kind: "requisition_approved" | "requisition_rejected" | "requisition_paid",
+  payslipCount?: number,
 ) {
   try {
     const [state, schoolAdminIds] = await Promise.all([
@@ -63,6 +70,27 @@ async function notifyRequisitionUpdate(
       message,
       link: "/portal",
     });
+
+    // Payroll funds paid out by Treasury → their payslips are already
+    // generated as drafts (see generatePayslipsForPaidPayrollScoped); hand
+    // off to the super_admin to review and send them.
+    if (kind === "requisition_paid" && requisition.category === "payroll") {
+      const superAdminIds = await listUserIdsByRole(orgOwnerId, ["super_admin"]);
+      const schoolName = client?.name ?? "a school";
+      const periodPart = requisition.period ? ` for ${requisition.period}` : "";
+      const message =
+        payslipCount !== undefined
+          ? `Bonté Service paid out ${categoryLabel} of ${requisition.amountRequested} for ${schoolName}${periodPart} — ${payslipCount} payslip${payslipCount === 1 ? "" : "s"} ${payslipCount === 1 ? "has" : "have"} been generated and are ready to review and send.`
+          : `Bonté Service paid out ${categoryLabel} of ${requisition.amountRequested} for ${schoolName}${periodPart} — payslips can now be generated and sent.`;
+      await notifyUsers(superAdminIds, {
+        orgOwnerId,
+        clientId: requisition.clientId,
+        type: "requisition_paid",
+        title: "Payroll funds released",
+        message,
+        link: "/send-payslips",
+      });
+    }
 
     if (client && requisition.submittedByUserId && kind !== "requisition_paid") {
       const submitter = await findUserById(requisition.submittedByUserId);
@@ -142,7 +170,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         actor,
       );
       if (requisition) {
-        await notifyRequisitionUpdate(session.user.orgOwnerId, requisition, "requisition_paid");
+        let payslipCount: number | undefined;
+        if (requisition.category === "payroll" && requisition.period) {
+          const generated = await generatePayslipsForPaidPayrollScoped(
+            session.user.orgOwnerId,
+            requisition.clientId,
+            requisition.period,
+            actor,
+          );
+          payslipCount = generated.length;
+        }
+        await notifyRequisitionUpdate(
+          session.user.orgOwnerId,
+          requisition,
+          "requisition_paid",
+          payslipCount,
+        );
       }
       return NextResponse.json({ ok: true });
     }

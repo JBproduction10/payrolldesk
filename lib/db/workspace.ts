@@ -6,6 +6,7 @@ import type {
   ID,
   LogActor,
   LogEntry,
+  Payslip,
   PayrollState,
   Requisition,
   Student,
@@ -16,6 +17,7 @@ import type {
 } from "../types";
 import { buildInitialState } from "../seed";
 import { seedHistory } from "../seed-history";
+import { makePayslip } from "../payroll";
 
 interface WorkspaceDoc {
   _id: string; // orgOwnerId (the super_admin's user id) — one document per organisation
@@ -450,6 +452,44 @@ export async function markRequisitionPaidScoped(
     );
   });
   return state.requisitions.find((r) => r.id === requisitionId && r.status === "paid") ?? null;
+}
+
+/**
+ * Treasury just paid out a "payroll" requisition for one school/period —
+ * generate a draft payslip for every active employee at that school for
+ * that period, same math as the super_admin's manual "Generate" action
+ * (see store.tsx's client-side generatePayslips), so they land ready for
+ * the super_admin to review and send. Re-running this (e.g. a correction
+ * payment for the same period) replaces any payslips already generated
+ * for that client+period rather than duplicating them. Returns the
+ * generated payslips (empty if the client has no active employees).
+ */
+export async function generatePayslipsForPaidPayrollScoped(
+  orgOwnerId: string,
+  clientId: string,
+  period: string,
+  actor: LogActor,
+): Promise<Payslip[]> {
+  let generated: Payslip[] = [];
+  await mutateWorkspace(orgOwnerId, (s) => {
+    const fields = s.fields.filter((f) => f.clientId === clientId);
+    const targets = s.employees.filter(
+      (e) => e.clientId === clientId && e.status !== "inactive" && !e.deletedAt,
+    );
+    generated = targets.map((e) => makePayslip(e, fields, period));
+    const generatedIds = new Set(generated.map((p) => p.employeeId));
+    const kept = s.payslips.filter(
+      (p) => !(p.clientId === clientId && p.period === period && generatedIds.has(p.employeeId)),
+    );
+    return withLog(
+      { ...s, payslips: [...kept, ...generated] },
+      clientId,
+      "generate",
+      `Bonté Service payment triggered ${generated.length} payslip${generated.length === 1 ? "" : "s"} for ${period}`,
+      actor,
+    );
+  });
+  return generated;
 }
 
 /* --------------------- scoped: supplies / Intendance --------------------- */
