@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Mail, Send, Loader2 } from "lucide-react";
+import { Mail, Send, Loader2, School } from "lucide-react";
 import { PageHeader } from "@/components/payroll/page-header";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -29,9 +29,7 @@ type ProviderKind = "resend" | "sendgrid" | "smtp";
 
 interface EmailConfigView {
   provider: ProviderKind;
-  fromName: string;
-  fromEmail: string;
-  replyTo: string;
+  defaultIdentity: { fromName: string; fromEmail: string; replyTo: string };
   smtp: { host: string; port: number; secure: boolean; user: string; hasPassword: boolean };
   sendgrid: { hasApiKey: boolean };
   resend: { hasApiKey: boolean };
@@ -45,6 +43,14 @@ interface EmailConfigView {
   configured: boolean;
   updatedAt: string | null;
 }
+
+interface SchoolIdentityView {
+  clientId: string;
+  name: string;
+  identity: { fromName: string; fromEmail: string; replyTo: string } | null;
+}
+
+type SchoolDraft = { fromName: string; fromEmail: string; replyTo: string };
 
 const PROVIDER_LABEL_KEY: Record<ProviderKind, string> = {
   resend: "providerResend",
@@ -75,6 +81,10 @@ export default function EmailSettingsPage() {
   const [sendgridKey, setSendgridKey] = useState("");
   const [resendKey, setResendKey] = useState("");
 
+  const [schools, setSchools] = useState<SchoolIdentityView[] | null>(null);
+  const [schoolDrafts, setSchoolDrafts] = useState<Record<string, SchoolDraft>>({});
+  const [savingSchoolId, setSavingSchoolId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -89,12 +99,42 @@ export default function EmailSettingsPage() {
     }
   }, [t]);
 
+  const loadSchools = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/email-config/schools", { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok) {
+        setSchools(data.schools);
+        setSchoolDrafts(
+          Object.fromEntries(
+            (data.schools as SchoolIdentityView[]).map((s) => [
+              s.clientId,
+              s.identity ?? { fromName: "", fromEmail: "", replyTo: "" },
+            ]),
+          ),
+        );
+      } else {
+        toast.add({ title: data.error ?? t("loadSchoolsErrorToast"), type: "error" });
+      }
+    } catch {
+      toast.add({ title: t("loadSchoolsErrorToast"), type: "error" });
+    }
+  }, [t]);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadSchools();
+  }, [load, loadSchools]);
 
   function update<K extends keyof EmailConfigView>(key: K, value: EmailConfigView[K]) {
     setConfig((c) => (c ? { ...c, [key]: value } : c));
+  }
+
+  function updateDraft(clientId: string, patch: Partial<SchoolDraft>) {
+    setSchoolDrafts((d) => ({
+      ...d,
+      [clientId]: { ...(d[clientId] ?? { fromName: "", fromEmail: "", replyTo: "" }), ...patch },
+    }));
   }
 
   async function handleSave() {
@@ -106,9 +146,7 @@ export default function EmailSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider: config.provider,
-          fromName: config.fromName,
-          fromEmail: config.fromEmail,
-          replyTo: config.replyTo,
+          defaultIdentity: config.defaultIdentity,
           smtp: { ...config.smtp, password: smtpPassword || undefined },
           sendgrid: { apiKey: sendgridKey || undefined },
           resend: { apiKey: resendKey || undefined },
@@ -129,6 +167,58 @@ export default function EmailSettingsPage() {
       toast.add({ title: t("saveFailedToast"), type: "error" });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveSchool(school: SchoolIdentityView) {
+    const draft = schoolDrafts[school.clientId];
+    if (!draft?.fromName.trim() || !draft?.fromEmail.trim()) return;
+    setSavingSchoolId(school.clientId);
+    try {
+      const res = await fetch("/api/admin/email-config/schools", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: school.clientId,
+          fromName: draft.fromName.trim(),
+          fromEmail: draft.fromEmail.trim(),
+          replyTo: draft.replyTo.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.add({ title: data.error ?? t("schoolSaveErrorToast"), type: "error" });
+        return;
+      }
+      await loadSchools();
+      toast.add({ title: t("schoolSavedToast", { school: school.name }), type: "success" });
+    } catch {
+      toast.add({ title: t("schoolSaveErrorToast"), type: "error" });
+    } finally {
+      setSavingSchoolId(null);
+    }
+  }
+
+  async function handleResetSchool(school: SchoolIdentityView) {
+    setSavingSchoolId(school.clientId);
+    try {
+      const res = await fetch("/api/admin/email-config/schools", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: school.clientId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.add({ title: data.error ?? t("schoolResetErrorToast"), type: "error" });
+        return;
+      }
+      updateDraft(school.clientId, { fromName: "", fromEmail: "", replyTo: "" });
+      await loadSchools();
+      toast.add({ title: t("schoolResetToast", { school: school.name }), type: "success" });
+    } catch {
+      toast.add({ title: t("schoolResetErrorToast"), type: "error" });
+    } finally {
+      setSavingSchoolId(null);
     }
   }
 
@@ -205,12 +295,19 @@ export default function EmailSettingsPage() {
               </Select>
             </div>
 
+            <div className="grid gap-1 pt-2">
+              <p className="text-sm font-medium text-foreground">{t("defaultIdentityHeading")}</p>
+              <p className="text-xs text-muted-foreground">{t("defaultIdentityHint")}</p>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label>{t("fromName")}</Label>
                 <Input
-                  value={config.fromName}
-                  onChange={(e) => update("fromName", e.target.value)}
+                  value={config.defaultIdentity.fromName}
+                  onChange={(e) =>
+                    update("defaultIdentity", { ...config.defaultIdentity, fromName: e.target.value })
+                  }
                   placeholder="Payroll Desk"
                 />
               </div>
@@ -218,8 +315,10 @@ export default function EmailSettingsPage() {
                 <Label>{t("fromEmail")}</Label>
                 <Input
                   type="email"
-                  value={config.fromEmail}
-                  onChange={(e) => update("fromEmail", e.target.value)}
+                  value={config.defaultIdentity.fromEmail}
+                  onChange={(e) =>
+                    update("defaultIdentity", { ...config.defaultIdentity, fromEmail: e.target.value })
+                  }
                   placeholder="noreply@yourschool.com"
                 />
               </div>
@@ -229,8 +328,10 @@ export default function EmailSettingsPage() {
               <Label>{t("replyTo")}</Label>
               <Input
                 type="email"
-                value={config.replyTo}
-                onChange={(e) => update("replyTo", e.target.value)}
+                value={config.defaultIdentity.replyTo}
+                onChange={(e) =>
+                  update("defaultIdentity", { ...config.defaultIdentity, replyTo: e.target.value })
+                }
                 placeholder="admin@yourschool.com"
               />
             </div>
@@ -313,6 +414,91 @@ export default function EmailSettingsPage() {
               {t("saveSettings")}
             </Button>
           </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <School className="size-4 text-muted-foreground" />
+              {t("schoolsTitle")}
+            </CardTitle>
+            <CardDescription>{t("schoolsDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col divide-y divide-border">
+            {schools === null ? (
+              <div className="flex justify-center py-8 text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+              </div>
+            ) : schools.length === 0 ? (
+              <p className="py-4 text-sm text-muted-foreground">{t("noSchools")}</p>
+            ) : (
+              schools.map((school) => {
+                const draft = schoolDrafts[school.clientId] ?? {
+                  fromName: "",
+                  fromEmail: "",
+                  replyTo: "",
+                };
+                const isSaving = savingSchoolId === school.clientId;
+                return (
+                  <div key={school.clientId} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">{school.name}</p>
+                      {!school.identity && (
+                        <span className="text-xs text-muted-foreground">{t("schoolUsingDefault")}</span>
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="grid gap-2">
+                        <Label>{t("fromName")}</Label>
+                        <Input
+                          value={draft.fromName}
+                          onChange={(e) => updateDraft(school.clientId, { fromName: e.target.value })}
+                          placeholder={t("schoolFromNamePlaceholder")}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>{t("fromEmail")}</Label>
+                        <Input
+                          type="email"
+                          value={draft.fromEmail}
+                          onChange={(e) => updateDraft(school.clientId, { fromEmail: e.target.value })}
+                          placeholder={t("schoolFromEmailPlaceholder")}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>{t("replyTo")}</Label>
+                        <Input
+                          type="email"
+                          value={draft.replyTo}
+                          onChange={(e) => updateDraft(school.clientId, { replyTo: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      {school.identity && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleResetSchool(school)}
+                          disabled={isSaving}
+                        >
+                          {t("resetToDefault")}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => handleSaveSchool(school)}
+                        disabled={isSaving || !draft.fromName.trim() || !draft.fromEmail.trim()}
+                      >
+                        {isSaving && <Loader2 className="size-4 animate-spin" />}
+                        {t("saveSchool")}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
         </Card>
 
         <Card>

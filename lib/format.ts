@@ -11,6 +11,7 @@ export const CURRENCY_SYMBOL: Record<Currency, string> = {
   ZAR: "R",
   GHS: "\u20b5",
   CDF: "FC",
+  XAF: "FCFA",
 };
 
 export function money(value: number, currency: Currency = "USD", locale: "en" | "fr" = "en"): string {

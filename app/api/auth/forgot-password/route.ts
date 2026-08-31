@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         to: result.user.email,
         name: result.user.name,
         link,
+        clientId: result.user.clientId,
       });
     }
     return genericResponse();

@@ -1,4 +1,4 @@
-import { getEmailConfig, DEFAULT_NOTIFICATIONS } from "../db/email-config";
+import { getEmailConfig, resolveSenderIdentity, DEFAULT_NOTIFICATIONS } from "../db/email-config";
 import type { EmailConfigDoc, EmailNotificationType } from "../db/email-config";
 import { ResendProvider } from "./providers/resend.provider";
 import { SendGridProvider } from "./providers/sendgrid.provider";
@@ -64,9 +64,8 @@ class EmailService {
   }
 
   private fromAddress(config: EmailConfigDoc | null): string {
-    const name = config?.fromName ?? process.env.EMAIL_FROM_NAME ?? "Payroll Desk";
-    const email = config?.fromEmail ?? process.env.EMAIL_FROM ?? "onboarding@resend.dev";
-    return `"${name}" <${email}>`;
+    const identity = resolveSenderIdentity(config, null);
+    return `"${identity.fromName}" <${identity.fromEmail}>`;
   }
 
   private htmlToText(html: string): string {
@@ -94,7 +93,7 @@ class EmailService {
     const send: EmailOptions = {
       ...options,
       from: options.from ?? this.fromAddress(config),
-      replyTo: options.replyTo ?? config?.replyTo,
+      replyTo: options.replyTo ?? resolveSenderIdentity(config, null).replyTo,
       text: options.text ?? this.htmlToText(options.html),
     };
 

@@ -80,6 +80,7 @@ export default function SendPayslipsPage() {
                 gross: payslip.gross,
                 totalDeductions: payslip.totalDeductions,
                 net: payslip.net,
+                clientId: activeClient.id,
               }),
             });
             const data = await res.json().catch(() => ({ sent: false }));

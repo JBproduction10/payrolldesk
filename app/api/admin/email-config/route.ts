@@ -7,9 +7,11 @@ import { emailService } from "@/lib/email-service";
 function toClientShape(config: EmailConfigDoc | null) {
   return {
     provider: config?.provider ?? "resend",
-    fromName: config?.fromName ?? "Payroll Desk",
-    fromEmail: config?.fromEmail ?? "",
-    replyTo: config?.replyTo ?? "",
+    defaultIdentity: {
+      fromName: config?.defaultIdentity?.fromName ?? "Payroll Desk",
+      fromEmail: config?.defaultIdentity?.fromEmail ?? "",
+      replyTo: config?.defaultIdentity?.replyTo ?? "",
+    },
     smtp: {
       host: config?.smtp?.host ?? "",
       port: config?.smtp?.port ?? 587,
@@ -48,9 +50,7 @@ export async function GET() {
 
 interface SaveBody {
   provider?: "resend" | "sendgrid" | "smtp";
-  fromName?: string;
-  fromEmail?: string;
-  replyTo?: string;
+  defaultIdentity?: { fromName?: string; fromEmail?: string; replyTo?: string };
   smtp?: { host?: string; port?: number; secure?: boolean; user?: string; password?: string };
   sendgrid?: { apiKey?: string };
   resend?: { apiKey?: string };
@@ -70,7 +70,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  if (!body.fromEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.fromEmail)) {
+  const fromEmail = body.defaultIdentity?.fromEmail;
+  if (!fromEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) {
     return NextResponse.json({ error: "A valid 'from' email address is required." }, { status: 400 });
   }
 
@@ -93,9 +94,11 @@ export async function POST(req: Request) {
 
     const saved = await saveEmailConfig(session.user.orgOwnerId, {
       provider: body.provider,
-      fromName: body.fromName,
-      fromEmail: body.fromEmail,
-      replyTo: body.replyTo || undefined,
+      defaultIdentity: {
+        fromName: body.defaultIdentity?.fromName || "Payroll Desk",
+        fromEmail,
+        replyTo: body.defaultIdentity?.replyTo || undefined,
+      },
       ...(smtp && { smtp: smtp as EmailConfigDoc["smtp"] }),
       ...(sendgrid && { sendgrid }),
       ...(resend && { resend }),

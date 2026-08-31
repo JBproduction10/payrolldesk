@@ -69,6 +69,7 @@ export async function POST(
       link,
       roleLabel: ROLE_LABEL[target.role],
       orgName: session.user.name ?? "your organisation",
+      clientId: target.clientId,
     });
 
     return NextResponse.json({ inviteSent: result.sent, inviteLink: link });

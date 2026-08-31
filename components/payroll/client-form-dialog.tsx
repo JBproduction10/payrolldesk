@@ -21,7 +21,7 @@ import {
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ColorSwatchPicker } from "./color-swatch-picker";
 
-const CURRENCIES: Currency[] = ["USD", "GBP", "EUR", "NGN", "KES", "ZAR", "GHS", "CDF"];
+const CURRENCIES: Currency[] = ["USD", "CDF"];
 
 interface FormState {
   name: string;

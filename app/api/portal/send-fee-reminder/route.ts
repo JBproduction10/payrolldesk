@@ -58,6 +58,7 @@ export async function POST(req: Request) {
       periodLabel,
       currency,
       amountDue,
+      clientId: session.user.clientId,
     });
 
     // Best-effort: let the school's other admins see the reminder went out

@@ -16,6 +16,8 @@ interface SendPayslipBody {
   gross?: number;
   totalDeductions?: number;
   net?: number;
+  /** Which school this payslip is for — picks that school's from-address. */
+  clientId?: string;
 }
 
 export async function POST(req: Request) {
@@ -43,6 +45,7 @@ export async function POST(req: Request) {
     gross,
     totalDeductions,
     net,
+    clientId,
   } = body;
 
   if (
@@ -73,6 +76,7 @@ export async function POST(req: Request) {
       gross,
       totalDeductions,
       net,
+      clientId,
     });
 
     // If this employee has their own "teacher" login, let them know

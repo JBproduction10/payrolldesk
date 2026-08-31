@@ -87,6 +87,7 @@ export async function POST(req: Request) {
                 amountRequested: requisition.amountRequested,
                 currency: client.currency,
                 link,
+                clientId: requisition.clientId,
               }),
             ),
         );

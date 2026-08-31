@@ -30,17 +30,17 @@ export function seedHistory(state: PayrollState): PayrollState {
 
   const now = Date.now();
   const activity: [number, LogEntry["kind"], string][] = [
-    [2 * 3600e3, "generate", "Generated 25 payslips for Acme Corp"],
-    [5 * 3600e3, "employee", "Added employee Ben Carter to Customer Support"],
-    [26 * 3600e3, "department", "Updated department head for Customer Support"],
-    [30 * 3600e3, "send", "Delivered 6 payslips to Engineering via email"],
-    [50 * 3600e3, "employee", "Marked Ava Thompson as on leave"],
-    [74 * 3600e3, "field", "Added Sales Commission field (Sales only)"],
+    [2 * 3600e3, "generate", "Generated 9 payslips for Groupe Scolaire Les Cèdres"],
+    [5 * 3600e3, "employee", "Added employee Paul Mvondo to Personnel d'appui"],
+    [26 * 3600e3, "department", "Updated department head for Administration"],
+    [30 * 3600e3, "send", "Delivered 5 payslips to Enseignants via email"],
+    [50 * 3600e3, "employee", "Marked Roger Ondoa as on leave"],
+    [74 * 3600e3, "field", "Added Prime de logement field (Enseignants only)"],
   ];
   for (const [ago, kind, message] of activity) {
     logs.push({
       id: uid("log"),
-      clientId: "c_acme",
+      clientId: "c_cedres",
       at: new Date(now - ago).toISOString(),
       kind,
       message,

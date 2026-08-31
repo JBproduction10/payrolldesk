@@ -107,6 +107,7 @@ async function notifyRequisitionUpdate(
           decision: kind === "requisition_approved" ? "approved" : "rejected",
           decisionNote: requisition.decisionNote,
           link: `${await baseUrl()}/portal`,
+          clientId: requisition.clientId,
         });
       }
     }

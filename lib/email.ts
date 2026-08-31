@@ -9,12 +9,13 @@ export interface SendResult {
 async function sendVia(
   orgOwnerId: string,
   notificationType: "invite" | "passwordReset",
-  params: { to: string; subject: string; html: string; link: string },
+  params: { to: string; subject: string; html: string; link: string; clientId?: string | null },
 ): Promise<SendResult> {
   const result = await emailService.send(
     orgOwnerId,
     { to: params.to, subject: params.subject, html: params.html },
     notificationType,
+    params.clientId,
   );
   if (!result.success) {
     console.error(`[email failed] ${params.to}: ${result.error ?? "unknown error"} — link: ${params.link}`);
@@ -31,6 +32,8 @@ export interface InviteEmailParams {
   link: string;
   roleLabel: string;
   orgName: string;
+  /** The school this account is scoped to, if any — picks that school's from-address. */
+  clientId?: string | null;
 }
 
 /**
@@ -49,6 +52,7 @@ export async function sendInviteEmail(params: InviteEmailParams): Promise<SendRe
     subject: `You've been added to ${params.orgName} on Payroll Desk`,
     html: renderInviteHtml(params),
     link: params.link,
+    clientId: params.clientId,
   });
 }
 
@@ -70,6 +74,8 @@ export interface PasswordResetEmailParams {
   to: string;
   name: string;
   link: string;
+  /** The school this account is scoped to, if any — picks that school's from-address. */
+  clientId?: string | null;
 }
 
 /**
@@ -86,6 +92,7 @@ export async function sendPasswordResetEmail(
     subject: "Reset your Payroll Desk password",
     html: renderResetHtml(params),
     link: params.link,
+    clientId: params.clientId,
   });
 }
 
@@ -120,6 +127,8 @@ export interface PayslipEmailParams {
   gross: number;
   totalDeductions: number;
   net: number;
+  /** Which school this payslip is for — picks that school's from-address. */
+  clientId?: string | null;
 }
 
 function money(amount: number, currency: string): string {
@@ -152,6 +161,7 @@ export async function sendPayslipEmail(
       html: renderPayslipHtml(params),
     },
     "payslip",
+    params.clientId,
   );
   if (!result.success) {
     console.error(
@@ -230,6 +240,8 @@ export interface FeeReminderEmailParams {
   periodLabel: string;
   currency: string;
   amountDue: number;
+  /** Which school this student belongs to — picks that school's from-address. */
+  clientId?: string | null;
 }
 
 export async function sendFeeReminderEmail(
@@ -243,6 +255,7 @@ export async function sendFeeReminderEmail(
       html: renderFeeReminderHtml(params),
     },
     "feeReminder",
+    params.clientId,
   );
   if (!result.success) {
     console.error(
@@ -294,6 +307,8 @@ export interface RequisitionSubmittedEmailParams {
   amountRequested: number;
   currency: string;
   link: string;
+  /** Which school this requisition is from — picks that school's from-address. */
+  clientId?: string | null;
 }
 
 /** Notifies one Treasury account by email that a new requisition needs a decision. */
@@ -308,6 +323,7 @@ export async function sendRequisitionSubmittedEmail(
       html: renderRequisitionSubmittedHtml(params),
     },
     "requisition",
+    params.clientId,
   );
   if (!result.success) {
     console.error(
@@ -341,6 +357,8 @@ export interface RequisitionDecisionEmailParams {
   decision: "approved" | "rejected";
   decisionNote?: string;
   link: string;
+  /** Which school this requisition is from — picks that school's from-address. */
+  clientId?: string | null;
 }
 
 /** Notifies whoever submitted a requisition once Treasury has approved or rejected it. */
@@ -356,6 +374,7 @@ export async function sendRequisitionDecisionEmail(
       html: renderRequisitionDecisionHtml(params),
     },
     "requisition",
+    params.clientId,
   );
   if (!result.success) {
     console.error(

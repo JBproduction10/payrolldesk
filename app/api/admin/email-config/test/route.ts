@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
-  let body: { to?: string };
+  let body: { to?: string; clientId?: string };
   try {
     body = await req.json();
   } catch {
@@ -20,6 +20,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
   }
 
-  const result = await emailService.testEmail(session.user.orgOwnerId, to);
+  const result = await emailService.testEmail(session.user.orgOwnerId, to, body.clientId);
   return NextResponse.json(result, { status: result.success ? 200 : 500 });
 }

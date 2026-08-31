@@ -9,7 +9,7 @@
 // etc. depends on email actually succeeding; callers treat a failed send
 // as "show the link/data in the UI instead", not as an error.
 
-import { getEmailConfig, type EmailConfigDoc } from "./db/email-config";
+import { getEmailConfig, resolveSenderIdentity, type EmailConfigDoc } from "./db/email-config";
 import { ResendProvider } from "./email/providers/resend.provider";
 import { SendGridProvider } from "./email/providers/sendgrid.provider";
 import { SMTPProvider } from "./email/providers/smtp.provider";
@@ -66,9 +66,9 @@ class EmailService {
     return entry;
   }
 
-  private fromHeader(config: EmailConfigDoc | null): string {
-    if (config?.fromEmail) return `"${config.fromName}" <${config.fromEmail}>`;
-    return process.env.EMAIL_FROM || "Payroll Desk <onboarding@resend.dev>";
+  private fromHeader(config: EmailConfigDoc | null, clientId?: string | null): string {
+    const identity = resolveSenderIdentity(config, clientId);
+    return `"${identity.fromName}" <${identity.fromEmail}>`;
   }
 
   private htmlToText(html: string): string {
@@ -83,12 +83,15 @@ class EmailService {
    * Sends one email on behalf of `orgOwnerId`. If `notificationType` is
    * given and that org has switched it off in Settings, this is a silent
    * no-op that still reports success=true (the caller shouldn't treat
-   * "the admin turned this off" as an error).
+   * "the admin turned this off" as an error). `clientId`, when given,
+   * picks that school's "from"/reply-to identity over the org default —
+   * see resolveSenderIdentity in db/email-config.
    */
   async send(
     orgOwnerId: string,
     options: EmailOptions,
     notificationType?: NotificationType,
+    clientId?: string | null,
   ): Promise<EmailResult> {
     const { config, provider } = await this.loadEntry(orgOwnerId);
 
@@ -96,10 +99,11 @@ class EmailService {
       return { success: true, messageId: "disabled" };
     }
 
+    const identity = resolveSenderIdentity(config, clientId);
     const withDefaults: EmailOptions = {
       ...options,
-      from: options.from ?? this.fromHeader(config),
-      replyTo: options.replyTo ?? config?.replyTo,
+      from: options.from ?? this.fromHeader(config, clientId),
+      replyTo: options.replyTo ?? identity.replyTo,
       text: options.text ?? this.htmlToText(options.html),
     };
 
@@ -111,11 +115,13 @@ class EmailService {
     return provider.verifyConnection();
   }
 
-  async testEmail(orgOwnerId: string, to: string): Promise<EmailResult> {
-    return this.send(orgOwnerId, {
-      to,
-      subject: "Test email — Payroll Desk",
-      html: `
+  async testEmail(orgOwnerId: string, to: string, clientId?: string | null): Promise<EmailResult> {
+    return this.send(
+      orgOwnerId,
+      {
+        to,
+        subject: "Test email — Payroll Desk",
+        html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;color:#24211d;">
           <h2>Test email</h2>
           <p>This is a test email from your Payroll Desk email settings.</p>
@@ -123,7 +129,10 @@ class EmailService {
           <p style="color:#9a9384;font-size:12px;">Sent at ${new Date().toLocaleString()}</p>
         </div>
       `,
-    });
+      },
+      undefined,
+      clientId,
+    );
   }
 
   /** Call after saving new settings so the next send picks them up immediately instead of waiting out the cache TTL. */

@@ -127,6 +127,7 @@ export async function POST(req: Request) {
       link,
       roleLabel: ROLE_LABEL[assignedRole],
       orgName: session.user.name ?? "your organisation",
+      clientId: member.clientId,
     });
 
     await appendTeamAuditLog(
