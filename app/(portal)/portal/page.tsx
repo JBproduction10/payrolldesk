@@ -112,6 +112,20 @@ interface EmployeeRef {
   position: string;
 }
 
+interface SchoolAdminEmployeeRef extends EmployeeRef {
+  email: string;
+  departmentId: string;
+  baseSalary: number;
+  status: Employee["status"];
+}
+
+interface DepartmentRef {
+  id: string;
+  name: string;
+  description: string;
+  headId: string | null;
+}
+
 type PortalData =
   | {
       role: "promoter";
@@ -140,7 +154,8 @@ type PortalData =
       expenses: Expense[];
       requisitions: Requisition[];
       payslips: Payslip[];
-      employees: EmployeeRef[];
+      employees: SchoolAdminEmployeeRef[];
+      departments: DepartmentRef[];
     }
   | {
       role: "cashier";
@@ -267,6 +282,7 @@ export default function PortalPage() {
         requisitions={data.requisitions}
         payslips={data.payslips}
         employees={data.employees}
+        departments={data.departments}
         period={data.period}
         onRefresh={load}
       />

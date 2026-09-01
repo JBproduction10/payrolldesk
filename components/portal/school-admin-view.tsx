@@ -2,11 +2,20 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Eye, Users, Receipt, ReceiptText, Send, History } from "lucide-react";
+import {
+  Eye,
+  Users,
+  Receipt,
+  ReceiptText,
+  Send,
+  History,
+  Building2,
+} from "lucide-react";
 import { money, formatDate, periodLabel, timeAgo } from "@/lib/format";
 import { paymentFor, schoolFinancials } from "@/lib/aggregate";
 import type {
   Client,
+  EmployeeStatus,
   Expense,
   FeePayment,
   Payslip,
@@ -15,12 +24,15 @@ import type {
   Student,
 } from "@/lib/types";
 import {
+  EmployeeStatusBadge,
   FeeStatusBadge,
   PayslipStatusBadge,
   RequisitionStatusBadge,
 } from "@/components/payroll/status-badges";
 import { PortalPayslipDialog } from "@/components/payroll/portal-payslip-dialog";
 import { PaymentHistoryDialog } from "@/components/payroll/payment-history-dialog";
+import { InitialsAvatar } from "@/components/payroll/initials-avatar";
+import { colorForIndex } from "@/lib/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +53,21 @@ interface EmployeeRef {
   position: string;
 }
 
-const TABS = ["students", "expenses", "requests", "payslips"] as const;
+interface SchoolAdminEmployee extends EmployeeRef {
+  email: string;
+  departmentId: string;
+  baseSalary: number;
+  status: EmployeeStatus;
+}
+
+interface DepartmentRef {
+  id: string;
+  name: string;
+  description: string;
+  headId: string | null;
+}
+
+const TABS = ["students", "expenses", "employees", "departments", "requests", "payslips"] as const;
 type Tab = (typeof TABS)[number];
 
 /**
@@ -59,6 +85,7 @@ export function SchoolAdminView({
   requisitions,
   payslips,
   employees,
+  departments,
   period,
   onRefresh,
 }: {
@@ -68,7 +95,8 @@ export function SchoolAdminView({
   expenses: Expense[];
   requisitions: Requisition[];
   payslips: Payslip[];
-  employees: EmployeeRef[];
+  employees: SchoolAdminEmployee[];
+  departments: DepartmentRef[];
   period: string;
   onRefresh: () => void;
 }) {
@@ -81,6 +109,8 @@ export function SchoolAdminView({
   const TAB_DEFS = [
     { key: "students" as const, label: t("tabStudents"), icon: Users },
     { key: "expenses" as const, label: t("tabExpenses"), icon: Receipt },
+    { key: "employees" as const, label: t("tabEmployees"), icon: Users },
+    { key: "departments" as const, label: t("tabDepartments"), icon: Building2 },
     { key: "requests" as const, label: t("tabRequests"), icon: Send },
     { key: "payslips" as const, label: t("tabPayslips"), icon: ReceiptText },
   ];
@@ -149,6 +179,12 @@ export function SchoolAdminView({
         />
       )}
       {tab === "expenses" && <ExpensesReadOnly client={client} expenses={expenses} />}
+      {tab === "employees" && (
+        <EmployeesReadOnly client={client} employees={employees} departments={departments} />
+      )}
+      {tab === "departments" && (
+        <DepartmentsReadOnly employees={employees} departments={departments} />
+      )}
       {tab === "requests" && (
         <RequestsTab
           client={client}
@@ -347,6 +383,155 @@ function ExpensesReadOnly({ client, expenses }: { client: Client; expenses: Expe
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------ read-only employees ------------------------------ */
+
+function EmployeesReadOnly({
+  client,
+  employees,
+  departments,
+}: {
+  client: Client;
+  employees: SchoolAdminEmployee[];
+  departments: DepartmentRef[];
+}) {
+  const t = useTranslations("schoolAdminView");
+  const locale = useLocale() as "en" | "fr";
+  const deptName = new Map(departments.map((d) => [d.id, d.name]));
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
+              <th className="px-4 py-3 font-medium">{t("columnEmployeeName")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnDepartment")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnEmail")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnBaseSalary")}</th>
+              <th className="px-4 py-3 font-medium">{t("columnEmployeeStatus")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {employees.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
+                  {t("noEmployeesYet")}
+                </td>
+              </tr>
+            ) : (
+              employees.map((e, i) => (
+                <tr key={e.id}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <InitialsAvatar name={e.name} color={colorForIndex(i)} size="sm" />
+                      <div>
+                        <div className="font-medium text-foreground">{e.name}</div>
+                        <div className="text-xs text-muted-foreground">{e.position}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {deptName.get(e.departmentId) ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{e.email}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {money(e.baseSalary, client.currency, locale)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <EmployeeStatusBadge status={e.status} />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ read-only departments ------------------------------ */
+
+function DepartmentsReadOnly({
+  employees,
+  departments,
+}: {
+  employees: SchoolAdminEmployee[];
+  departments: DepartmentRef[];
+}) {
+  const t = useTranslations("schoolAdminView");
+
+  if (departments.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center text-muted-foreground">
+        {t("noDepartmentsYet")}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {departments.map((d) => {
+        const staff = employees.filter((e) => e.departmentId === d.id);
+        const head = employees.find((e) => e.id === d.headId);
+        const visible = staff.slice(0, 6);
+        const extra = staff.length - visible.length;
+
+        return (
+          <div
+            key={d.id}
+            className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm"
+          >
+            <div className="mb-3 flex items-start justify-between">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                <Building2 className="size-4.5" />
+              </div>
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                {t("peopleCount", { count: staff.length })}
+              </span>
+            </div>
+
+            <h3 className="font-heading text-lg font-semibold text-foreground">{d.name}</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">{d.description}</p>
+
+            <div className="mt-4 rounded-xl bg-muted/60 p-3">
+              <div className="text-xs text-muted-foreground">{t("columnHead")}</div>
+              <div className="truncate text-sm font-medium text-foreground">
+                {head?.name ?? t("unassigned")}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-medium text-muted-foreground">
+                {t("members")}
+              </div>
+              <div className="flex items-center">
+                {visible.map((e, i) => (
+                  <InitialsAvatar
+                    key={e.id}
+                    name={e.name}
+                    color={colorForIndex(i)}
+                    size="sm"
+                    className="-ml-2 border-2 border-card first:ml-0"
+                  />
+                ))}
+                {extra > 0 && (
+                  <span className="-ml-2 flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[11px] font-medium text-muted-foreground">
+                    +{extra}
+                  </span>
+                )}
+                {staff.length === 0 && (
+                  <span className="text-xs text-muted-foreground">{t("noMembersYet")}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

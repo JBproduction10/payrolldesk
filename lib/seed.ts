@@ -24,12 +24,42 @@ const COLORS = ["pine", "gold", "olive", "pine-mid", "clay", "pine-deep"];
 
 export const clients: Client[] = [
   {
+    id: "c_acme",
+    name: "Acme Corp",
+    domain: "acme.io",
+    description: "Software & platform services",
+    color: "pine",
+    currency: "USD",
+    payDay: 31,
+    createdAt: "2023-02-14",
+  },
+  {
+    id: "c_globex",
+    name: "Globex Digital",
+    domain: "globex.io",
+    description: "Creative digital agency",
+    color: "gold",
+    currency: "GBP",
+    payDay: 28,
+    createdAt: "2024-06-03",
+  },
+  {
+    id: "c_northwind",
+    name: "Northwind Retail",
+    domain: "northwind.shop",
+    description: "Retail & e-commerce",
+    color: "olive",
+    currency: "USD",
+    payDay: 25,
+    createdAt: "2025-01-20",
+  },
+  {
     id: "c_cedres",
     name: "Groupe Scolaire Les Cèdres",
     domain: "cedres.edu",
     description: "Primaire — Yaoundé",
     color: "pine-mid",
-    currency: "CDF",
+    currency: "XAF",
     payDay: 28,
     createdAt: "2015-09-01",
   },
@@ -39,7 +69,7 @@ export const clients: Client[] = [
     domain: "fontaine.edu",
     description: "Secondaire — Douala",
     color: "gold",
-    currency: "CDF",
+    currency: "XAF",
     payDay: 27,
     createdAt: "2012-09-01",
   },
@@ -49,7 +79,7 @@ export const clients: Client[] = [
     domain: "excellence.edu",
     description: "Bilingue — Bafoussam",
     color: "olive",
-    currency: "USD",
+    currency: "XAF",
     payDay: 30,
     createdAt: "2018-09-01",
   },
@@ -59,7 +89,7 @@ export const clients: Client[] = [
     domain: "horizon.edu",
     description: "Maternelle & Primaire — Bertoua",
     color: "clay",
-    currency: "CDF",
+    currency: "XAF",
     payDay: 25,
     createdAt: "2020-09-01",
   },
@@ -69,7 +99,7 @@ export const clients: Client[] = [
     domain: "saintmichel.edu",
     description: "Primaire — nouvelle école, 1ère rentrée",
     color: "pine-deep",
-    currency: "USD",
+    currency: "XAF",
     payDay: 28,
     createdAt: "2026-01-12",
   },
@@ -87,17 +117,174 @@ type DeptSeed = {
   staff: StaffSeed[];
 };
 
+const acmeDepts: DeptSeed[] = [
+  {
+    key: "eng",
+    name: "Engineering",
+    description: "Product development, platform and infrastructure",
+    staff: [
+      ["Maya Patel", "CTO", 12500],
+      ["Ethan Brooks", "Senior Engineer", 9200],
+      ["Nora Haddad", "Senior Engineer", 8800],
+      ["Owen Clark", "Engineer", 6400],
+      ["Ava Thompson", "Engineer", 6100, "leave"],
+      ["Leo Martins", "QA Engineer", 5200],
+    ],
+  },
+  {
+    key: "sales",
+    name: "Sales",
+    description: "Revenue, accounts and business development",
+    staff: [
+      ["Jordan Lee", "Head of Sales", 8200],
+      ["Carlos Rivera", "Account Executive", 7200],
+      ["Nadia Farouk", "Account Executive", 6400],
+      ["Isabel Moreno", "Sales Development Rep", 5600],
+    ],
+  },
+  {
+    key: "mkt",
+    name: "Marketing",
+    description: "Brand, growth and content",
+    staff: [
+      ["Sofia Reyes", "Marketing Director", 8200],
+      ["Liam Osei", "Growth Manager", 6200],
+      ["Zara Blake", "Content Lead", 5400],
+    ],
+  },
+  {
+    key: "hr",
+    name: "Human Resources",
+    description: "People, culture and recruiting",
+    staff: [
+      ["Daniel Kim", "HR Manager", 7600],
+      ["Grace Wanjiru", "People Partner", 5600],
+    ],
+  },
+  {
+    key: "fin",
+    name: "Finance",
+    description: "Accounting, budgeting and compliance",
+    staff: [
+      ["Amara Okafor", "Finance Director", 9000],
+      ["Hana Zhou", "Financial Analyst", 7000],
+      ["Luca Neri", "Accountant", 6400],
+    ],
+  },
+  {
+    key: "ops",
+    name: "Operations",
+    description: "Logistics, facilities and support",
+    staff: [
+      ["Lucas Mendes", "Operations Manager", 7000],
+      ["Hugo Silva", "Operations Analyst", 5600],
+      ["Omar Faruk", "Facilities Coordinator", 5000],
+    ],
+  },
+  {
+    key: "cs",
+    name: "Customer Support",
+    description: "Client success and helpdesk",
+    staff: [
+      ["Priya Nair", "Support Lead", 5300],
+      ["Sena Turan", "Support Specialist", 3900],
+      ["Elena Rossi", "Support Specialist", 3600],
+      ["Ben Carter", "Support Associate", 3300],
+    ],
+  },
+];
+
+const globexDepts: DeptSeed[] = [
+  {
+    key: "design",
+    name: "Design Studio",
+    description: "Brand identity and product design",
+    staff: [
+      ["Iris Calloway", "Creative Director", 7400],
+      ["Theo Nakamura", "Senior Designer", 5200],
+      ["Mila Vance", "Motion Designer", 4600],
+    ],
+  },
+  {
+    key: "accounts",
+    name: "Client Accounts",
+    description: "Account management and delivery",
+    staff: [
+      ["Rowan Blake", "Account Director", 6800],
+      ["Sadie Wren", "Account Manager", 4400],
+    ],
+  },
+  {
+    key: "studio",
+    name: "Production",
+    description: "Film, photo and post-production",
+    staff: [
+      ["Kofi Mensah", "Producer", 5600],
+      ["Elsa Lindqvist", "Editor", 4200],
+    ],
+  },
+  {
+    key: "admin",
+    name: "Studio Admin",
+    description: "Finance and office operations",
+    staff: [["Harriet Doyle", "Studio Manager", 4000]],
+  },
+];
+
+const northwindDepts: DeptSeed[] = [
+  {
+    key: "store",
+    name: "Store Floor",
+    description: "In-store sales and merchandising",
+    staff: [
+      ["Marcus Hale", "Store Manager", 5200],
+      ["Tara Boyd", "Shift Supervisor", 3600],
+      ["Kai Ferreira", "Sales Associate", 2900],
+    ],
+  },
+  {
+    key: "warehouse",
+    name: "Warehouse",
+    description: "Stock, picking and dispatch",
+    staff: [
+      ["Dmitri Volkov", "Warehouse Lead", 4200],
+      ["Nia Roberts", "Fulfilment Associate", 3100],
+    ],
+  },
+  {
+    key: "ecom",
+    name: "E-commerce",
+    description: "Online storefront and listings",
+    staff: [
+      ["Yara Haddad", "E-commerce Manager", 5800],
+      ["Felix Adeyemi", "Listings Specialist", 3400],
+    ],
+  },
+  {
+    key: "care",
+    name: "Customer Care",
+    description: "Orders, returns and enquiries",
+    staff: [["Jonah Pike", "Care Specialist", 3000]],
+  },
+  {
+    key: "finance",
+    name: "Finance",
+    description: "Bookkeeping and payroll liaison",
+    staff: [["Beatrice Okonkwo", "Bookkeeper", 4400]],
+  },
+];
+
 const cedresDepts: DeptSeed[] = [
   {
     key: "enseignants",
     name: "Enseignants",
     description: "Corps enseignant du primaire",
     staff: [
-      ["Jean-Paul Ateba", "Enseignant CM2", 600000],
-      ["Solange Mbarga", "Enseignante CM1", 575000],
-      ["Étienne Nkolo", "Enseignant CE2", 550000],
-      ["Brigitte Talla", "Enseignante CE1", 550000],
-      ["Roger Ondoa", "Enseignant CP", 525000],
+      ["Jean-Paul Ateba", "Enseignant CM2", 120000],
+      ["Solange Mbarga", "Enseignante CM1", 115000],
+      ["Étienne Nkolo", "Enseignant CE2", 110000],
+      ["Brigitte Talla", "Enseignante CE1", 110000],
+      ["Roger Ondoa", "Enseignant CP", 105000],
     ],
   },
   {
@@ -105,16 +292,16 @@ const cedresDepts: DeptSeed[] = [
     name: "Administration",
     description: "Direction et gestion administrative",
     staff: [
-      ["Marceline Fotso", "Directrice", 1250000],
-      ["Vivien Essomba", "Surveillant général", 475000],
-      ["Chantal Biya", "Secrétaire", 425000],
+      ["Marceline Fotso", "Directrice", 250000],
+      ["Vivien Essomba", "Surveillant général", 95000],
+      ["Chantal Biya", "Secrétaire", 85000],
     ],
   },
   {
     key: "appui",
     name: "Personnel d'appui",
     description: "Gardiennage et entretien",
-    staff: [["Paul Mvondo", "Gardien", 300000]],
+    staff: [["Paul Mvondo", "Gardien", 60000]],
   },
 ];
 
@@ -124,10 +311,10 @@ const fontaineDepts: DeptSeed[] = [
     name: "Enseignants",
     description: "Corps enseignant du secondaire",
     staff: [
-      ["Adèle Ngassa", "Enseignante 6ème", 650000],
-      ["Bertrand Nana", "Enseignant 5ème", 640000],
-      ["Clarisse Wandji", "Enseignante 4ème", 625000],
-      ["Désiré Fokou", "Enseignant 3ème", 625000],
+      ["Adèle Ngassa", "Enseignante 6ème", 130000],
+      ["Bertrand Nana", "Enseignant 5ème", 128000],
+      ["Clarisse Wandji", "Enseignante 4ème", 125000],
+      ["Désiré Fokou", "Enseignant 3ème", 125000],
     ],
   },
   {
@@ -135,16 +322,16 @@ const fontaineDepts: DeptSeed[] = [
     name: "Administration",
     description: "Direction, censorat et comptabilité",
     staff: [
-      ["Hervé Djoumessi", "Directeur", 1200000],
-      ["Amina Sali", "Censeur", 550000],
-      ["Rodrigue Tchinda", "Comptable", 500000],
+      ["Hervé Djoumessi", "Directeur", 240000],
+      ["Amina Sali", "Censeur", 110000],
+      ["Rodrigue Tchinda", "Comptable", 100000],
     ],
   },
   {
     key: "appui",
     name: "Personnel d'appui",
     description: "Entretien et logistique",
-    staff: [["Josiane Nkeng", "Agent d'entretien", 275000]],
+    staff: [["Josiane Nkeng", "Agent d'entretien", 55000]],
   },
 ];
 
@@ -154,10 +341,10 @@ const excellenceDepts: DeptSeed[] = [
     name: "Enseignants",
     description: "Corps enseignant bilingue",
     staff: [
-      ["Mark Johnson", "English Teacher", 225],
-      ["Sylvie Nguema", "Enseignante Français", 210],
-      ["David Etoundi", "Enseignant Mathématiques", 215],
-      ["Pauline Assiga", "Enseignante Sciences", 205],
+      ["Mark Johnson", "English Teacher", 135000],
+      ["Sylvie Nguema", "Enseignante Français", 125000],
+      ["David Etoundi", "Enseignant Mathématiques", 128000],
+      ["Pauline Assiga", "Enseignante Sciences", 122000],
     ],
   },
   {
@@ -165,8 +352,8 @@ const excellenceDepts: DeptSeed[] = [
     name: "Administration",
     description: "Direction et économat",
     staff: [
-      ["Rose Ateba", "Directrice", 385],
-      ["Bruno Kenfack", "Économe", 175],
+      ["Rose Ateba", "Directrice", 230000],
+      ["Bruno Kenfack", "Économe", 105000],
     ],
   },
   {
@@ -174,8 +361,8 @@ const excellenceDepts: DeptSeed[] = [
     name: "Personnel d'appui",
     description: "Bibliothèque et transport",
     staff: [
-      ["Alice Menye", "Bibliothécaire", 115],
-      ["Guy Larue", "Chauffeur", 110],
+      ["Alice Menye", "Bibliothécaire", 70000],
+      ["Guy Larue", "Chauffeur", 65000],
     ],
   },
 ];
@@ -186,9 +373,9 @@ const horizonDepts: DeptSeed[] = [
     name: "Enseignants",
     description: "Corps enseignant",
     staff: [
-      ["Larissa Ekani", "Enseignante Maternelle", 475000],
-      ["Yannick Bella", "Enseignant CP", 500000],
-      ["Odette Fouda", "Enseignante CE1", 500000],
+      ["Larissa Ekani", "Enseignante Maternelle", 95000],
+      ["Yannick Bella", "Enseignant CP", 100000],
+      ["Odette Fouda", "Enseignante CE1", 100000],
     ],
   },
   {
@@ -196,15 +383,15 @@ const horizonDepts: DeptSeed[] = [
     name: "Administration",
     description: "Direction et surveillance",
     staff: [
-      ["Théophile Mbassi", "Directeur", 1000000],
-      ["Simon Abega", "Surveillant", 375000],
+      ["Théophile Mbassi", "Directeur", 200000],
+      ["Simon Abega", "Surveillant", 75000],
     ],
   },
   {
     key: "appui",
     name: "Personnel d'appui",
     description: "Gardiennage",
-    staff: [["Delphine Ntolo", "Gardienne", 275000]],
+    staff: [["Delphine Ntolo", "Gardienne", 55000]],
   },
 ];
 
@@ -214,25 +401,28 @@ const saintmichelDepts: DeptSeed[] = [
     name: "Enseignants",
     description: "Corps enseignant",
     staff: [
-      ["Judith Ebode", "Enseignante CI", 150],
-      ["François Ella", "Enseignant CP", 150],
+      ["Judith Ebode", "Enseignante CI", 90000],
+      ["François Ella", "Enseignant CP", 90000],
     ],
   },
   {
     key: "administration",
     name: "Administration",
     description: "Direction",
-    staff: [["Anicet Owona", "Directeur", 315]],
+    staff: [["Anicet Owona", "Directeur", 190000]],
   },
   {
     key: "appui",
     name: "Personnel d'appui",
     description: "Gardiennage",
-    staff: [["Régine Assam", "Gardienne", 85]],
+    staff: [["Régine Assam", "Gardienne", 50000]],
   },
 ];
 
 const DEPT_SETS: Record<string, DeptSeed[]> = {
+  c_acme: acmeDepts,
+  c_globex: globexDepts,
+  c_northwind: northwindDepts,
   c_cedres: cedresDepts,
   c_fontaine: fontaineDepts,
   c_excellence: excellenceDepts,
@@ -313,7 +503,246 @@ function baseField(clientId: string): PayField {
 
 type FieldSeed = Omit<PayField, "id" | "clientId" | "order">;
 
-const schoolDeductionFields: FieldSeed[] = [
+const acmeFields: FieldSeed[] = [
+  {
+    label: "Housing Allowance",
+    category: "earning",
+    type: "fixed",
+    amount: 800,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "Flat monthly housing support",
+  },
+  {
+    label: "Transport Allowance",
+    category: "earning",
+    type: "fixed",
+    amount: 300,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Performance Bonus",
+    category: "earning",
+    type: "percent",
+    amount: 5,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Sales Commission",
+    category: "earning",
+    type: "percent",
+    amount: 8,
+    textValue: "",
+    required: false,
+    departmentIds: ["d_acme_sales"],
+    note: "Sales team only",
+  },
+  {
+    label: "On-call Allowance",
+    category: "earning",
+    type: "fixed",
+    amount: 250,
+    textValue: "",
+    required: false,
+    departmentIds: ["d_acme_eng"],
+    note: "Engineering rota",
+  },
+  {
+    label: "Income Tax",
+    category: "deduction",
+    type: "percent",
+    amount: 10,
+    textValue: "",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Pension Contribution",
+    category: "deduction",
+    type: "percent",
+    amount: 5,
+    textValue: "",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Health Insurance",
+    category: "deduction",
+    type: "fixed",
+    amount: 120,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Bank Account",
+    category: "info",
+    type: "text",
+    amount: 0,
+    textValue: "•••• 0000",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Tax ID",
+    category: "info",
+    type: "text",
+    amount: 0,
+    textValue: "TIN-000000",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+];
+
+const globexFields: FieldSeed[] = [
+  {
+    label: "Studio Allowance",
+    category: "earning",
+    type: "fixed",
+    amount: 450,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Project Bonus",
+    category: "earning",
+    type: "percent",
+    amount: 6,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "PAYE",
+    category: "deduction",
+    type: "percent",
+    amount: 20,
+    textValue: "",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "National Insurance",
+    category: "deduction",
+    type: "percent",
+    amount: 8,
+    textValue: "",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Bank Account",
+    category: "info",
+    type: "text",
+    amount: 0,
+    textValue: "•••• 0000",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+];
+
+const northwindFields: FieldSeed[] = [
+  {
+    label: "Shift Allowance",
+    category: "earning",
+    type: "fixed",
+    amount: 200,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Overtime",
+    category: "earning",
+    type: "perEmployee",
+    amount: 0,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "Entered per employee each cycle",
+  },
+  {
+    label: "Store Bonus",
+    category: "earning",
+    type: "percent",
+    amount: 4,
+    textValue: "",
+    required: false,
+    departmentIds: ["d_northwind_store"],
+    note: "Store floor only",
+  },
+  {
+    label: "Income Tax",
+    category: "deduction",
+    type: "percent",
+    amount: 12,
+    textValue: "",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Uniform Levy",
+    category: "deduction",
+    type: "fixed",
+    amount: 40,
+    textValue: "",
+    required: false,
+    departmentIds: ["d_northwind_store", "d_northwind_warehouse"],
+    note: "",
+  },
+  {
+    label: "Bank Account",
+    category: "info",
+    type: "text",
+    amount: 0,
+    textValue: "•••• 0000",
+    required: true,
+    departmentIds: [],
+    note: "",
+  },
+];
+
+const schoolFields: FieldSeed[] = [
+  {
+    label: "Prime de logement",
+    category: "earning",
+    type: "fixed",
+    amount: 15000,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
+  {
+    label: "Prime de transport",
+    category: "earning",
+    type: "fixed",
+    amount: 10000,
+    textValue: "",
+    required: false,
+    departmentIds: [],
+    note: "",
+  },
   {
     label: "IRPP",
     category: "deduction",
@@ -356,62 +785,15 @@ const schoolDeductionFields: FieldSeed[] = [
   },
 ];
 
-// Fixed-amount allowances are denominated per client currency, so schools
-// billing in CDF and schools billing in USD each get their own amounts.
-const schoolFieldsCDF: FieldSeed[] = [
-  {
-    label: "Prime de logement",
-    category: "earning",
-    type: "fixed",
-    amount: 75000,
-    textValue: "",
-    required: false,
-    departmentIds: [],
-    note: "",
-  },
-  {
-    label: "Prime de transport",
-    category: "earning",
-    type: "fixed",
-    amount: 50000,
-    textValue: "",
-    required: false,
-    departmentIds: [],
-    note: "",
-  },
-  ...schoolDeductionFields,
-];
-
-const schoolFieldsUSD: FieldSeed[] = [
-  {
-    label: "Prime de logement",
-    category: "earning",
-    type: "fixed",
-    amount: 25,
-    textValue: "",
-    required: false,
-    departmentIds: [],
-    note: "",
-  },
-  {
-    label: "Prime de transport",
-    category: "earning",
-    type: "fixed",
-    amount: 15,
-    textValue: "",
-    required: false,
-    departmentIds: [],
-    note: "",
-  },
-  ...schoolDeductionFields,
-];
-
 const FIELD_SETS: Record<string, FieldSeed[]> = {
-  c_cedres: schoolFieldsCDF,
-  c_fontaine: schoolFieldsCDF,
-  c_excellence: schoolFieldsUSD,
-  c_horizon: schoolFieldsCDF,
-  c_saintmichel: schoolFieldsUSD,
+  c_acme: acmeFields,
+  c_globex: globexFields,
+  c_northwind: northwindFields,
+  c_cedres: schoolFields,
+  c_fontaine: schoolFields,
+  c_excellence: schoolFields,
+  c_horizon: schoolFields,
+  c_saintmichel: schoolFields,
 };
 
 function buildFields(): PayField[] {
@@ -462,67 +844,67 @@ type SchoolSeed = {
 };
 
 const cedresStudents: SchoolStudentSeed[] = [
-  { name: "Aristide Fouda", className: "CM2", monthlyFee: 125000, guardianName: "Mme Fouda", guardianPhone: "699000001", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Line Ngo Bikoi", className: "CM2", monthlyFee: 125000, guardianName: "M. Bikoi", guardianPhone: "699000002", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Cyrille Amougou", className: "CM1", monthlyFee: 125000, guardianName: "Mme Amougou", guardianPhone: "699000003", prior: { type: "full" }, current: { type: "partial", amount: 75000 } },
-  { name: "Rebecca Same", className: "CM1", monthlyFee: 125000, guardianName: "M. Same", guardianPhone: "699000004", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Josué Belinga", className: "CE2", monthlyFee: 110000, guardianName: "Mme Belinga", guardianPhone: "699000005", prior: { type: "partial", amount: 60000 }, current: { type: "full" } },
-  { name: "Grace Owona", className: "CE2", monthlyFee: 110000, guardianName: "M. Owona", guardianPhone: "699000006", prior: { type: "full" }, current: { type: "none" } },
-  { name: "Franck Mbella", className: "CE1", monthlyFee: 110000, guardianName: "Mme Mbella", guardianPhone: "699000007", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Nadège Essola", className: "CE1", monthlyFee: 110000, guardianName: "M. Essola", guardianPhone: "699000008", prior: { type: "social_case" }, current: { type: "social_case" } },
-  { name: "Yvan Ndzana", className: "CP", monthlyFee: 100000, guardianName: "Mme Ndzana", guardianPhone: "699000009", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Perle Onana", className: "CP", monthlyFee: 100000, guardianName: "M. Onana", guardianPhone: "699000010", prior: { type: "none" }, current: { type: "installments", amounts: [30000, 20000] } },
-  { name: "Blaise Enow", className: "CM2", monthlyFee: 125000, guardianName: "Mme Enow", guardianPhone: "699000011", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Odile Kamga", className: "CM1", monthlyFee: 125000, guardianName: "M. Kamga", guardianPhone: "699000012", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Aristide Fouda", className: "CM2", monthlyFee: 25000, guardianName: "Mme Fouda", guardianPhone: "699000001", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Line Ngo Bikoi", className: "CM2", monthlyFee: 25000, guardianName: "M. Bikoi", guardianPhone: "699000002", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Cyrille Amougou", className: "CM1", monthlyFee: 25000, guardianName: "Mme Amougou", guardianPhone: "699000003", prior: { type: "full" }, current: { type: "partial", amount: 15000 } },
+  { name: "Rebecca Same", className: "CM1", monthlyFee: 25000, guardianName: "M. Same", guardianPhone: "699000004", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Josué Belinga", className: "CE2", monthlyFee: 22000, guardianName: "Mme Belinga", guardianPhone: "699000005", prior: { type: "partial", amount: 12000 }, current: { type: "full" } },
+  { name: "Grace Owona", className: "CE2", monthlyFee: 22000, guardianName: "M. Owona", guardianPhone: "699000006", prior: { type: "full" }, current: { type: "none" } },
+  { name: "Franck Mbella", className: "CE1", monthlyFee: 22000, guardianName: "Mme Mbella", guardianPhone: "699000007", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Nadège Essola", className: "CE1", monthlyFee: 22000, guardianName: "M. Essola", guardianPhone: "699000008", prior: { type: "social_case" }, current: { type: "social_case" } },
+  { name: "Yvan Ndzana", className: "CP", monthlyFee: 20000, guardianName: "Mme Ndzana", guardianPhone: "699000009", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Perle Onana", className: "CP", monthlyFee: 20000, guardianName: "M. Onana", guardianPhone: "699000010", prior: { type: "none" }, current: { type: "installments", amounts: [6000, 4000] } },
+  { name: "Blaise Enow", className: "CM2", monthlyFee: 25000, guardianName: "Mme Enow", guardianPhone: "699000011", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Odile Kamga", className: "CM1", monthlyFee: 25000, guardianName: "M. Kamga", guardianPhone: "699000012", prior: { type: "full" }, current: { type: "full" } },
 ];
 
 const fontaineStudents: SchoolStudentSeed[] = [
-  { name: "Kevin Fotso Jr", className: "6ème", monthlyFee: 150000, guardianName: "Mme Fotso", guardianPhone: "677000001", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Sandra Meka", className: "6ème", monthlyFee: 150000, guardianName: "M. Meka", guardianPhone: "677000002", prior: { type: "full" }, current: { type: "none" } },
-  { name: "Willy Ebogo", className: "5ème", monthlyFee: 150000, guardianName: "Mme Ebogo", guardianPhone: "677000003", prior: { type: "installments", amounts: [50000, 25000] }, current: { type: "partial", amount: 75000 } },
-  { name: "Carine Nyanga", className: "5ème", monthlyFee: 150000, guardianName: "M. Nyanga", guardianPhone: "677000004", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Steve Abanda", className: "4ème", monthlyFee: 160000, guardianName: "Mme Abanda", guardianPhone: "677000005", prior: { type: "none" }, current: { type: "none" } },
-  { name: "Flore Manga", className: "4ème", monthlyFee: 160000, guardianName: "M. Manga", guardianPhone: "677000006", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Landry Njoya", className: "3ème", monthlyFee: 160000, guardianName: "Mme Njoya", guardianPhone: "677000007", prior: { type: "social_case" }, current: { type: "social_case" } },
-  { name: "Aurelie Bikele", className: "3ème", monthlyFee: 160000, guardianName: "M. Bikele", guardianPhone: "677000008", prior: { type: "full" }, current: { type: "partial", amount: 100000 } },
-  { name: "Patrick Zang", className: "6ème", monthlyFee: 150000, guardianName: "Mme Zang", guardianPhone: "677000009", prior: { type: "full" }, current: { type: "full" } },
-  { name: "Diane Oyono", className: "5ème", monthlyFee: 150000, guardianName: "M. Oyono", guardianPhone: "677000010", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Kevin Fotso Jr", className: "6ème", monthlyFee: 30000, guardianName: "Mme Fotso", guardianPhone: "677000001", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Sandra Meka", className: "6ème", monthlyFee: 30000, guardianName: "M. Meka", guardianPhone: "677000002", prior: { type: "full" }, current: { type: "none" } },
+  { name: "Willy Ebogo", className: "5ème", monthlyFee: 30000, guardianName: "Mme Ebogo", guardianPhone: "677000003", prior: { type: "installments", amounts: [10000, 5000] }, current: { type: "partial", amount: 15000 } },
+  { name: "Carine Nyanga", className: "5ème", monthlyFee: 30000, guardianName: "M. Nyanga", guardianPhone: "677000004", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Steve Abanda", className: "4ème", monthlyFee: 32000, guardianName: "Mme Abanda", guardianPhone: "677000005", prior: { type: "none" }, current: { type: "none" } },
+  { name: "Flore Manga", className: "4ème", monthlyFee: 32000, guardianName: "M. Manga", guardianPhone: "677000006", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Landry Njoya", className: "3ème", monthlyFee: 32000, guardianName: "Mme Njoya", guardianPhone: "677000007", prior: { type: "social_case" }, current: { type: "social_case" } },
+  { name: "Aurelie Bikele", className: "3ème", monthlyFee: 32000, guardianName: "M. Bikele", guardianPhone: "677000008", prior: { type: "full" }, current: { type: "partial", amount: 20000 } },
+  { name: "Patrick Zang", className: "6ème", monthlyFee: 30000, guardianName: "Mme Zang", guardianPhone: "677000009", prior: { type: "full" }, current: { type: "full" } },
+  { name: "Diane Oyono", className: "5ème", monthlyFee: 30000, guardianName: "M. Oyono", guardianPhone: "677000010", prior: { type: "full" }, current: { type: "full" } },
 ];
 
 const excellenceStudents: SchoolStudentSeed[] = [
-  { name: "Ryan Foka", className: "5ème Bilingue", monthlyFee: 65, guardianName: "Mme Foka", guardianPhone: "655000001", current: { type: "full" } },
-  { name: "Tania Ekwalla", className: "5ème Bilingue", monthlyFee: 65, guardianName: "M. Ekwalla", guardianPhone: "655000002", current: { type: "full" } },
-  { name: "Chris Etame", className: "4ème Bilingue", monthlyFee: 65, guardianName: "Mme Etame", guardianPhone: "655000003", current: { type: "partial", amount: 35 } },
-  { name: "Melissa Njoh", className: "4ème Bilingue", monthlyFee: 65, guardianName: "M. Njoh", guardianPhone: "655000004", current: { type: "full" } },
-  { name: "Boris Fongang", className: "3ème Bilingue", monthlyFee: 70, guardianName: "Mme Fongang", guardianPhone: "655000005", current: { type: "full" } },
-  { name: "Nina Ateba", className: "3ème Bilingue", monthlyFee: 70, guardianName: "M. Ateba", guardianPhone: "655000006", current: { type: "none" } },
-  { name: "Éric Talom", className: "6ème Bilingue", monthlyFee: 65, guardianName: "Mme Talom", guardianPhone: "655000007", current: { type: "full" } },
-  { name: "Sarah Mbia", className: "6ème Bilingue", monthlyFee: 65, guardianName: "M. Mbia", guardianPhone: "655000008", current: { type: "full" } },
-  { name: "Junior Awono", className: "5ème Bilingue", monthlyFee: 65, guardianName: "Mme Awono", guardianPhone: "655000009", current: { type: "social_case" } },
-  { name: "Priscille Doumbe", className: "4ème Bilingue", monthlyFee: 65, guardianName: "M. Doumbe", guardianPhone: "655000010", current: { type: "full" } },
-  { name: "Alex Ngo", className: "3ème Bilingue", monthlyFee: 70, guardianName: "Mme Ngo", guardianPhone: "655000011", current: { type: "partial", amount: 40 } },
-  { name: "Vanessa Kotto", className: "6ème Bilingue", monthlyFee: 65, guardianName: "M. Kotto", guardianPhone: "655000012", current: { type: "full" } },
-  { name: "Cedric Ossome", className: "5ème Bilingue", monthlyFee: 65, guardianName: "Mme Ossome", guardianPhone: "655000013", current: { type: "none" } },
+  { name: "Ryan Foka", className: "5ème Bilingue", monthlyFee: 40000, guardianName: "Mme Foka", guardianPhone: "655000001", current: { type: "full" } },
+  { name: "Tania Ekwalla", className: "5ème Bilingue", monthlyFee: 40000, guardianName: "M. Ekwalla", guardianPhone: "655000002", current: { type: "full" } },
+  { name: "Chris Etame", className: "4ème Bilingue", monthlyFee: 40000, guardianName: "Mme Etame", guardianPhone: "655000003", current: { type: "partial", amount: 20000 } },
+  { name: "Melissa Njoh", className: "4ème Bilingue", monthlyFee: 40000, guardianName: "M. Njoh", guardianPhone: "655000004", current: { type: "full" } },
+  { name: "Boris Fongang", className: "3ème Bilingue", monthlyFee: 42000, guardianName: "Mme Fongang", guardianPhone: "655000005", current: { type: "full" } },
+  { name: "Nina Ateba", className: "3ème Bilingue", monthlyFee: 42000, guardianName: "M. Ateba", guardianPhone: "655000006", current: { type: "none" } },
+  { name: "Éric Talom", className: "6ème Bilingue", monthlyFee: 38000, guardianName: "Mme Talom", guardianPhone: "655000007", current: { type: "full" } },
+  { name: "Sarah Mbia", className: "6ème Bilingue", monthlyFee: 38000, guardianName: "M. Mbia", guardianPhone: "655000008", current: { type: "full" } },
+  { name: "Junior Awono", className: "5ème Bilingue", monthlyFee: 40000, guardianName: "Mme Awono", guardianPhone: "655000009", current: { type: "social_case" } },
+  { name: "Priscille Doumbe", className: "4ème Bilingue", monthlyFee: 40000, guardianName: "M. Doumbe", guardianPhone: "655000010", current: { type: "full" } },
+  { name: "Alex Ngo", className: "3ème Bilingue", monthlyFee: 42000, guardianName: "Mme Ngo", guardianPhone: "655000011", current: { type: "partial", amount: 25000 } },
+  { name: "Vanessa Kotto", className: "6ème Bilingue", monthlyFee: 38000, guardianName: "M. Kotto", guardianPhone: "655000012", current: { type: "full" } },
+  { name: "Cedric Ossome", className: "5ème Bilingue", monthlyFee: 40000, guardianName: "Mme Ossome", guardianPhone: "655000013", current: { type: "none" } },
 ];
 
 const horizonStudents: SchoolStudentSeed[] = [
-  { name: "Emma Nkodo", className: "Maternelle", monthlyFee: 90000, guardianName: "Mme Nkodo", guardianPhone: "690000001", current: { type: "full" } },
-  { name: "Noah Biloa", className: "Maternelle", monthlyFee: 90000, guardianName: "M. Biloa", guardianPhone: "690000002", current: { type: "full" } },
-  { name: "Chloé Essiane", className: "CP", monthlyFee: 95000, guardianName: "Mme Essiane", guardianPhone: "690000003", current: { type: "partial", amount: 50000 } },
-  { name: "Liam Owoundi", className: "CP", monthlyFee: 95000, guardianName: "M. Owoundi", guardianPhone: "690000004", current: { type: "full" } },
-  { name: "Léa Mengue", className: "CE1", monthlyFee: 100000, guardianName: "Mme Mengue", guardianPhone: "690000005", current: { type: "none" } },
-  { name: "Nathan Bikoro", className: "CE1", monthlyFee: 100000, guardianName: "M. Bikoro", guardianPhone: "690000006", current: { type: "social_case" } },
-  { name: "Inès Ekomo", className: "Maternelle", monthlyFee: 90000, guardianName: "Mme Ekomo", guardianPhone: "690000007", current: { type: "full" } },
-  { name: "Théo Ndongo", className: "CP", monthlyFee: 95000, guardianName: "M. Ndongo", guardianPhone: "690000008", current: { type: "full" } },
+  { name: "Emma Nkodo", className: "Maternelle", monthlyFee: 18000, guardianName: "Mme Nkodo", guardianPhone: "690000001", current: { type: "full" } },
+  { name: "Noah Biloa", className: "Maternelle", monthlyFee: 18000, guardianName: "M. Biloa", guardianPhone: "690000002", current: { type: "full" } },
+  { name: "Chloé Essiane", className: "CP", monthlyFee: 19000, guardianName: "Mme Essiane", guardianPhone: "690000003", current: { type: "partial", amount: 10000 } },
+  { name: "Liam Owoundi", className: "CP", monthlyFee: 19000, guardianName: "M. Owoundi", guardianPhone: "690000004", current: { type: "full" } },
+  { name: "Léa Mengue", className: "CE1", monthlyFee: 20000, guardianName: "Mme Mengue", guardianPhone: "690000005", current: { type: "none" } },
+  { name: "Nathan Bikoro", className: "CE1", monthlyFee: 20000, guardianName: "M. Bikoro", guardianPhone: "690000006", current: { type: "social_case" } },
+  { name: "Inès Ekomo", className: "Maternelle", monthlyFee: 18000, guardianName: "Mme Ekomo", guardianPhone: "690000007", current: { type: "full" } },
+  { name: "Théo Ndongo", className: "CP", monthlyFee: 19000, guardianName: "M. Ndongo", guardianPhone: "690000008", current: { type: "full" } },
 ];
 
 const saintmichelStudents: SchoolStudentSeed[] = [
-  { name: "Divine Ateba", className: "CI", monthlyFee: 30, guardianName: "Mme Ateba", guardianPhone: "696000001", current: { type: "full" } },
-  { name: "Prince Nnomo", className: "CI", monthlyFee: 30, guardianName: "M. Nnomo", guardianPhone: "696000002", current: { type: "none" } },
-  { name: "Merveille Onana", className: "CP", monthlyFee: 30, guardianName: "Mme Onana", guardianPhone: "696000003", current: { type: "full" } },
-  { name: "Israël Mbarga", className: "CP", monthlyFee: 30, guardianName: "M. Mbarga", guardianPhone: "696000004", current: { type: "partial", amount: 15 } },
-  { name: "Gaëlle Fouda", className: "CI", monthlyFee: 30, guardianName: "Mme Fouda", guardianPhone: "696000005", current: { type: "social_case" } },
-  { name: "Elvis Ngo", className: "CP", monthlyFee: 30, guardianName: "M. Ngo", guardianPhone: "696000006", current: { type: "full" } },
+  { name: "Divine Ateba", className: "CI", monthlyFee: 17000, guardianName: "Mme Ateba", guardianPhone: "696000001", current: { type: "full" } },
+  { name: "Prince Nnomo", className: "CI", monthlyFee: 17000, guardianName: "M. Nnomo", guardianPhone: "696000002", current: { type: "none" } },
+  { name: "Merveille Onana", className: "CP", monthlyFee: 18000, guardianName: "Mme Onana", guardianPhone: "696000003", current: { type: "full" } },
+  { name: "Israël Mbarga", className: "CP", monthlyFee: 18000, guardianName: "M. Mbarga", guardianPhone: "696000004", current: { type: "partial", amount: 8000 } },
+  { name: "Gaëlle Fouda", className: "CI", monthlyFee: 17000, guardianName: "Mme Fouda", guardianPhone: "696000005", current: { type: "social_case" } },
+  { name: "Elvis Ngo", className: "CP", monthlyFee: 18000, guardianName: "M. Ngo", guardianPhone: "696000006", current: { type: "full" } },
 ];
 
 const SCHOOLS: SchoolSeed[] = [
@@ -623,34 +1005,34 @@ function buildFeePayments(currentPeriod: string): FeePayment[] {
 type SchoolExpenseSeed = [category: Expense["category"], description: string, amount: number, daysAgo: number];
 
 const cedresExpenses: SchoolExpenseSeed[] = [
-  ["fuel", "Carburant groupe électrogène", 225000, 57],
-  ["maintenance", "Réparation plomberie", 150000, 49],
-  ["supplies", "Craies, cahiers de classe", 110000, 43],
-  ["credit", "Remboursement crédit bâtiment", 400000, 28],
-  ["renovation", "Peinture salle CE1", 325000, 17],
+  ["fuel", "Carburant groupe électrogène", 45000, 57],
+  ["maintenance", "Réparation plomberie", 30000, 49],
+  ["supplies", "Craies, cahiers de classe", 22000, 43],
+  ["credit", "Remboursement crédit bâtiment", 80000, 28],
+  ["renovation", "Peinture salle CE1", 65000, 17],
 ];
 
 const fontaineExpenses: SchoolExpenseSeed[] = [
-  ["fuel", "Carburant véhicule scolaire", 300000, 54],
-  ["utilities", "Facture électricité", 240000, 42],
-  ["credit", "Échéance crédit mobilier", 475000, 29],
-  ["other", "Fournitures administratives", 90000, 20],
+  ["fuel", "Carburant véhicule scolaire", 60000, 54],
+  ["utilities", "Facture électricité", 48000, 42],
+  ["credit", "Échéance crédit mobilier", 95000, 29],
+  ["other", "Fournitures administratives", 18000, 20],
 ];
 
 const excellenceExpenses: SchoolExpenseSeed[] = [
-  ["supplies", "Manuels bilingues", 150, 30],
-  ["fuel", "Carburant bus scolaire", 90, 22],
-  ["maintenance", "Entretien climatisation", 45, 12],
+  ["supplies", "Manuels bilingues", 90000, 30],
+  ["fuel", "Carburant bus scolaire", 55000, 22],
+  ["maintenance", "Entretien climatisation", 28000, 12],
 ];
 
 const horizonExpenses: SchoolExpenseSeed[] = [
-  ["renovation", "Réfection cour de récréation", 250000, 25],
-  ["supplies", "Matériel pédagogique maternelle", 120000, 16],
+  ["renovation", "Réfection cour de récréation", 50000, 25],
+  ["supplies", "Matériel pédagogique maternelle", 24000, 16],
 ];
 
 const saintmichelExpenses: SchoolExpenseSeed[] = [
-  ["renovation", "Aménagement des salles de classe", 200, 60],
-  ["supplies", "Tables-bancs et fournitures", 140, 52],
+  ["renovation", "Aménagement des salles de classe", 120000, 60],
+  ["supplies", "Tables-bancs et fournitures", 85000, 52],
 ];
 
 const SCHOOL_EXPENSES: Record<string, { expenses: SchoolExpenseSeed[]; submittedBy: string }> = {
@@ -825,7 +1207,7 @@ export function buildInitialState(): PayrollState {
   const period = toPeriod(now);
   return {
     clients,
-    activeClientId: "c_cedres",
+    activeClientId: "c_acme",
     departments,
     employees,
     fields: buildFields(),

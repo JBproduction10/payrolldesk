@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, Eye, Landmark, Users, Building2, GraduationCap } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Landmark, Users, Building2 } from "lucide-react";
 import { usePayroll } from "@/lib/store";
 import { swatch } from "@/lib/colors";
 import { toast } from "@/components/ui/toast";
@@ -18,15 +18,14 @@ export default function ClientsPage() {
     clients,
     departments,
     employees,
-    students,
+    payslips,
+    period,
     activeClientId,
     deletedClients,
     setActiveClient,
     removeClient,
     restoreClient,
   } = usePayroll();
-
-  const totalStudents = students.length;
 
   function handleDelete(id: string, name: string) {
     if (clients.length === 1) {
@@ -80,18 +79,12 @@ export default function ClientsPage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label={t("totalClients")}
           value={clients.length}
           icon={<Landmark className="size-4.5" />}
           iconClassName="bg-brand-pine-mid/15 text-brand-pine-mid"
-        />
-        <StatCard
-          label={t("totalStudents")}
-          value={totalStudents}
-          icon={<GraduationCap className="size-4.5" />}
-          iconClassName="bg-brand-pine/12 text-brand-pine"
         />
         <StatCard
           label={t("totalEmployees")}
@@ -112,7 +105,9 @@ export default function ClientsPage() {
           const isActive = c.id === activeClientId;
           const empCount = employees.filter((e) => e.clientId === c.id).length;
           const deptCount = departments.filter((d) => d.clientId === c.id).length;
-          const studentCount = students.filter((s) => s.clientId === c.id).length;
+          const payslipCount = payslips.filter(
+            (p) => p.clientId === c.id && p.period === period,
+          ).length;
 
           return (
             <div
@@ -165,9 +160,9 @@ export default function ClientsPage() {
                 </div>
                 <div>
                   <div className="font-heading text-lg font-semibold text-foreground">
-                    {studentCount}
+                    {payslipCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">{t("students")}</div>
+                  <div className="text-xs text-muted-foreground">{t("payslips")}</div>
                 </div>
               </div>
 
