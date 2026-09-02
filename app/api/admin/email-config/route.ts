@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import { getEmailConfig, saveEmailConfig, type EmailConfigDoc } from "@/lib/db/email-config";
 import { emailService } from "@/lib/email-service";
 
@@ -40,7 +41,8 @@ export async function GET() {
   }
 
   try {
-    const config = await getEmailConfig(session.user.orgOwnerId);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const config = await getEmailConfig(orgOwnerId);
     return NextResponse.json(toClientShape(config));
   } catch (err) {
     console.error("Failed to load email config — is MONGODB_URI configured?", err);
@@ -92,7 +94,8 @@ export async function POST(req: Request) {
     const sendgrid = body.sendgrid?.apiKey ? { apiKey: body.sendgrid.apiKey } : undefined;
     const resend = body.resend?.apiKey ? { apiKey: body.resend.apiKey } : undefined;
 
-    const saved = await saveEmailConfig(session.user.orgOwnerId, {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const saved = await saveEmailConfig(orgOwnerId, {
       provider: body.provider,
       defaultIdentity: {
         fromName: body.defaultIdentity?.fromName || "Payroll Desk",
@@ -105,7 +108,7 @@ export async function POST(req: Request) {
       ...(body.notifications && { notifications: body.notifications as EmailConfigDoc["notifications"] }),
     });
 
-    emailService.clearCache(session.user.orgOwnerId);
+    emailService.clearCache(orgOwnerId);
 
     return NextResponse.json(toClientShape(saved));
   } catch (err) {

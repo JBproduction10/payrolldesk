@@ -3,6 +3,7 @@ import auth, { authOptions } from "@/auth";
 import { sendPayslipEmail, type PayslipEmailLine } from "@/lib/email";
 import { findUserByEmployeeId } from "@/lib/db/users";
 import { notifyUsers } from "@/lib/db/notifications";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 
 interface SendPayslipBody {
   to?: string;
@@ -64,8 +65,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const result = await sendPayslipEmail({
-      orgOwnerId: session.user.orgOwnerId,
+      orgOwnerId,
       to,
       employeeName,
       schoolName,
@@ -83,10 +85,10 @@ export async function POST(req: Request) {
     // in-app too — best-effort, never blocks the email result above.
     if (employeeId) {
       try {
-        const linkedUser = await findUserByEmployeeId(session.user.orgOwnerId, employeeId);
+        const linkedUser = await findUserByEmployeeId(orgOwnerId, employeeId);
         if (linkedUser) {
           await notifyUsers([linkedUser._id], {
-            orgOwnerId: session.user.orgOwnerId,
+            orgOwnerId,
             clientId: linkedUser.clientId,
             type: result.sent ? "payslip_sent" : "payslip_failed",
             title: result.sent ? "Payslip sent" : "Payslip delivery failed",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import { emailService } from "@/lib/email/service";
 
 export async function POST(req: Request) {
@@ -21,8 +22,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const connected = await emailService.verifyConnection(session.user.orgOwnerId);
-    const result = await emailService.testEmail(session.user.orgOwnerId, to);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const connected = await emailService.verifyConnection(orgOwnerId);
+    const result = await emailService.testEmail(orgOwnerId, to);
     return NextResponse.json(
       {
         success: result.success,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import { getEmailConfig, saveClientSenderIdentity } from "@/lib/db/email-config";
 import { getWorkspace } from "@/lib/db/workspace";
 import { emailService } from "@/lib/email-service";
@@ -12,9 +13,10 @@ export async function GET() {
   }
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const [state, config] = await Promise.all([
-      getWorkspace(session.user.orgOwnerId),
-      getEmailConfig(session.user.orgOwnerId),
+      getWorkspace(orgOwnerId),
+      getEmailConfig(orgOwnerId),
     ]);
 
     const schools = state.clients
@@ -70,12 +72,13 @@ export async function PUT(req: Request) {
   }
 
   try {
-    await saveClientSenderIdentity(session.user.orgOwnerId, body.clientId, {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    await saveClientSenderIdentity(orgOwnerId, body.clientId, {
       fromName: body.fromName.trim(),
       fromEmail: body.fromEmail.trim(),
       replyTo: body.replyTo?.trim() || undefined,
     });
-    emailService.clearCache(session.user.orgOwnerId);
+    emailService.clearCache(orgOwnerId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to save school email identity:", err);
@@ -101,8 +104,9 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    await saveClientSenderIdentity(session.user.orgOwnerId, body.clientId, null);
-    emailService.clearCache(session.user.orgOwnerId);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    await saveClientSenderIdentity(orgOwnerId, body.clientId, null);
+    emailService.clearCache(orgOwnerId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to clear school email identity:", err);

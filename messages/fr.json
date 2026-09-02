@@ -27,7 +27,8 @@
     "fieldDesigner": "Concepteur de champs",
     "teamAccess": "Équipe et accès",
     "auditLog": "Journal d'audit",
-    "emailSettings": "Paramètres e-mail"
+    "emailSettings": "Paramètres e-mail",
+    "promoters": "Promoteurs"
   },
   "notifications": {
     "title": "Notifications",

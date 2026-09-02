@@ -14,14 +14,6 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  // A platform_admin with no active impersonation has no org data to show
-  // here — send them to the promoters picker instead. Once impersonating a
-  // promoter, session.user.role is that promoter's "super_admin", so the
-  // normal check below already lets them through.
-  if (session.user.role === "platform_admin") {
-    redirect("/promoters");
-  }
-
   if (session.user.role !== "super_admin") {
     redirect("/portal");
   }

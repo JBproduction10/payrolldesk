@@ -29,9 +29,6 @@ import {
 } from "@/components/ui/table";
 
 const ROLE_LABEL_KEY: Record<Role, string> = {
-  // Platform admins never appear in this list (they're outside every
-  // promoter's org), but the Role union requires an exhaustive map.
-  platform_admin: "roleSuperAdmin",
   super_admin: "roleSuperAdmin",
   promoter: "rolePromoter",
   school_admin: "roleSchoolAdmin",

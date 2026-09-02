@@ -12,6 +12,7 @@ import {
   UserCog,
   History,
   Mail,
+  Network,
 } from "lucide-react";
 
 export interface NavItem {
@@ -35,6 +36,7 @@ export const PAYROLL_NAV: NavItem[] = [
   { href: "/send-payslips", labelKey: "sendPayslips", icon: Send },
   { href: "/field-designer", labelKey: "fieldDesigner", icon: SlidersHorizontal },
   { href: "/team", labelKey: "teamAccess", icon: UserCog },
+  { href: "/promoters", labelKey: "promoters", icon: Network },
   { href: "/audit", labelKey: "auditLog", icon: History },
   { href: "/settings/email", labelKey: "emailSettings", icon: Mail },
 ];

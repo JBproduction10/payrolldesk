@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
 import { sendFeeReminderEmail } from "@/lib/email";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 
 interface ReminderBody {
   to?: string;
@@ -42,8 +43,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const result = await sendFeeReminderEmail({
-      orgOwnerId: session.user.orgOwnerId,
+      orgOwnerId,
       to,
       studentName,
       className,

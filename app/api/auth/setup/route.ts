@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { createBootstrapAdmin, hasAnyPlatformAdmin } from "@/lib/db/users";
+import { createBootstrapAdmin, hasAnyUser } from "@/lib/db/users";
 
 export async function GET() {
   try {
-    const taken = await hasAnyPlatformAdmin();
+    const taken = await hasAnyUser();
     return NextResponse.json({ available: !taken });
   } catch (err) {
     console.error("Setup availability check failed — is MONGODB_URI configured?", err);
@@ -41,10 +41,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Locked the moment a platform_admin exists — this route only ever
-    // creates that one account. Every promoter workspace after this is
-    // added from the platform admin's Promoters page, not here.
-    if (await hasAnyPlatformAdmin()) {
+    // Locked the moment any account exists — this route only ever creates
+    // the one platform-owning super_admin. Promoter organizations after
+    // this are added from the Promoters page, not here.
+    if (await hasAnyUser()) {
       return NextResponse.json(
         { error: "Setup has already been completed." },
         { status: 409 },

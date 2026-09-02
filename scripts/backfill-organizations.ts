@@ -1,25 +1,27 @@
 // scripts/backfill-organizations.ts
 //
-// One-time migration for the move to multi-promoter support. Before this
-// change, a "super_admin" account *was* the workspace — there was no
-// separate Organization record. This script creates one for every
-// super_admin that's missing it, so they show up in the platform admin's
-// Promoters list, without touching any of their existing data (Clients,
-// Employees, etc. keep working off the same orgOwnerId they always have).
+// One-time migration for multi-promoter support. Before this, a
+// "super_admin" account *was* the workspace — there was no separate
+// Organization record. This script creates one for every super_admin
+// that's missing it, so it shows up in the Promoters page, without
+// touching any of its existing data (Clients, Employees, etc. keep working
+// off the same orgOwnerId they always have).
+//
+// If you ran an earlier version of this script, it stored the field as
+// "ownerId" — this run renames it to "orgOwnerId" automatically first, so
+// re-running is safe and is exactly how you fix that.
 //
 // Safe to run repeatedly — skips any super_admin that already has an
 // Organization.
 //
 // Usage:
 //   npx tsx scripts/backfill-organizations.ts
-//   npx tsx scripts/backfill-organizations.ts "Kalonji Group"
-//   npx tsx scripts/backfill-organizations.ts "Kalonji Group" "Bonté Service"
+//   npx tsx scripts/backfill-organizations.ts "Kapenga Group"
+//   npx tsx scripts/backfill-organizations.ts "Kapenga Group" "Bonté Service"
 //
 // The name arguments only apply when exactly one super_admin needs
-// backfilling (the expected case for this migration — one promoter, one
-// workspace, today). With more than one, every organization gets a
-// default name based on the promoter's account name; rename afterwards
-// from the platform admin UI once that's built, or edit the
+// backfilling. With more than one, every organization gets a default name
+// based on the account's name — rename afterwards by editing the
 // "organizations" collection directly in Mongo.
 
 import { config as loadEnv } from "dotenv";
@@ -39,12 +41,22 @@ async function main() {
   // Imported after env vars are loaded, since lib/mongodb.ts reads
   // MONGODB_URI at module-eval time.
   const { getDb } = await import("../lib/mongodb");
-  const { getOrganizationByOwnerId, createOrganization } = await import(
+  const { getOrganizationByOrgOwnerId, createOrganization } = await import(
     "../lib/db/organizations"
   );
   const { listUserIdsByRole } = await import("../lib/db/users");
 
   const db = await getDb();
+
+  // Fix up any organizations created by an earlier version of this script,
+  // which used the field name "ownerId" instead of "orgOwnerId".
+  const renamed = await db
+    .collection("organizations")
+    .updateMany({ ownerId: { $exists: true } }, { $rename: { ownerId: "orgOwnerId" } });
+  if (renamed.modifiedCount > 0) {
+    console.log(`Migrated ${renamed.modifiedCount} organization(s) from "ownerId" to "orgOwnerId".`);
+  }
+
   const superAdmins = await db
     .collection<import("../lib/db/users").UserDoc>("users")
     .find({ role: "super_admin" })
@@ -67,7 +79,7 @@ async function main() {
   let explicitNameUsed = false;
 
   for (const admin of superAdmins) {
-    const existing = await getOrganizationByOwnerId(admin._id);
+    const existing = await getOrganizationByOrgOwnerId(admin._id);
     if (existing) {
       console.log(`  Skipping ${admin.email} — already has Organization "${existing.name}".`);
       skipped++;
@@ -87,9 +99,13 @@ async function main() {
     const treasuryUserIds = await listUserIdsByRole(admin._id, ["treasury"]);
     const hasTreasuryCompany = treasuryUserIds.length > 0;
 
+    // orgOwnerId = admin._id here (not a fresh self-anchored id) because
+    // this promoter's Clients/Employees/etc. already exist scoped to that
+    // id — we're just giving that existing scope an Organization record,
+    // not creating a new one.
     const organization = await createOrganization({
       name,
-      ownerId: admin._id,
+      orgOwnerId: admin._id,
       hasTreasuryCompany,
       treasuryCompanyName:
         hasTreasuryCompany && useExplicitName ? explicitTreasuryName : undefined,

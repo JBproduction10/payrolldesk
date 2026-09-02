@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import auth, { authOptions } from "@/auth";
 import { getWorkspace, saveWorkspace } from "@/lib/db/workspace";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import type { PayrollState } from "@/lib/types";
 import { getServerSession } from "next-auth";
 
@@ -11,7 +12,8 @@ export async function GET() {
   }
 
   try {
-    const state = await getWorkspace(session.user.orgOwnerId);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const state = await getWorkspace(orgOwnerId);
     return NextResponse.json({ state });
   } catch (err) {
     console.error("Failed to load workspace — is MONGODB_URI configured?", err);
@@ -45,7 +47,8 @@ export async function PUT(req: Request) {
   }
 
   try {
-    await saveWorkspace(session.user.orgOwnerId, body.state);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    await saveWorkspace(orgOwnerId, body.state);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to save workspace — is MONGODB_URI configured?", err);

@@ -27,7 +27,8 @@
     "fieldDesigner": "Field Designer",
     "teamAccess": "Team & Access",
     "auditLog": "Audit Log",
-    "emailSettings": "Email Settings"
+    "emailSettings": "Email Settings",
+    "promoters": "Promoters"
   },
   "notifications": {
     "title": "Notifications",

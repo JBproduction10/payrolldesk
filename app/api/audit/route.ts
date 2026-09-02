@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import { listAudit, recordAudit } from "@/lib/db/audit";
 import type { AuditAction, AuditEntityType } from "@/lib/types";
 
@@ -53,8 +54,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const entry = await recordAudit({
-      orgOwnerId: session.user.orgOwnerId,
+      orgOwnerId,
       clientId: body.clientId ?? session.user.clientId ?? null,
       actorId: session.user.id,
       actorName: session.user.name ?? session.user.email ?? "Unknown",
@@ -91,7 +93,8 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") ?? 25);
 
   try {
-    const result = await listAudit(session.user.orgOwnerId, {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const result = await listAudit(orgOwnerId, {
       entityType: entityType && ENTITY_TYPES.includes(entityType) ? entityType : undefined,
       action: action && ACTIONS.includes(action) ? action : undefined,
       before: before ?? undefined,

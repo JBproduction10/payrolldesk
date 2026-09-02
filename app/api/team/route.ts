@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import auth, { authOptions } from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import { createTeamMember, listTeamMembers } from "@/lib/db/users";
 import { appendTeamAuditLog } from "@/lib/db/workspace";
 import { notifyUsers } from "@/lib/db/notifications";
@@ -10,7 +11,6 @@ import type { Role } from "@/lib/types";
 const ASSIGNABLE_ROLES: Role[] = ["promoter", "school_admin", "teacher", "finance", "treasury", "cashier", "intendance"];
 
 const ROLE_LABEL: Record<Role, string> = {
-  platform_admin: "Platform admin",
   super_admin: "Super admin",
   promoter: "Promoter",
   school_admin: "School admin",
@@ -35,7 +35,8 @@ export async function GET() {
   }
 
   try {
-    const members = await listTeamMembers(session.user.orgOwnerId);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const members = await listTeamMembers(orgOwnerId);
     return NextResponse.json({
       members: members.map((m) => ({
         id: m._id,
@@ -107,11 +108,12 @@ export async function POST(req: Request) {
   }
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const { user: member, inviteToken } = await createTeamMember({
       name,
       email,
       role: assignedRole,
-      orgOwnerId: session.user.orgOwnerId,
+      orgOwnerId,
       clientId:
         assignedRole === "promoter" || assignedRole === "treasury"
           ? null
@@ -122,7 +124,7 @@ export async function POST(req: Request) {
     const base = await inviteBaseUrl();
     const link = `${base}/accept-invite?token=${inviteToken}`;
     const result = await sendInviteEmail({
-      orgOwnerId: session.user.orgOwnerId,
+      orgOwnerId,
       to: member.email,
       name: member.name,
       link,
@@ -132,7 +134,7 @@ export async function POST(req: Request) {
     });
 
     await appendTeamAuditLog(
-      session.user.orgOwnerId,
+      orgOwnerId,
       `Invited ${member.name} (${member.email}) as ${ROLE_LABEL[assignedRole]}`,
       { id: session.user.id, name: session.user.name ?? "Super admin", role: session.user.role },
     );
@@ -141,7 +143,7 @@ export async function POST(req: Request) {
     // never blocks account creation.
     try {
       await notifyUsers([member._id], {
-        orgOwnerId: session.user.orgOwnerId,
+        orgOwnerId,
         clientId: member.clientId,
         type: "team_invited",
         title: "Welcome to Payroll Desk",

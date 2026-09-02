@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import auth, { authOptions } from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import {
   deleteUser,
   findUserById,
@@ -14,7 +15,6 @@ import type { Role } from "@/lib/types";
 const ASSIGNABLE_ROLES: Role[] = ["promoter", "school_admin", "teacher", "finance", "treasury", "cashier", "intendance"];
 
 const ROLE_LABEL: Record<Role, string> = {
-  platform_admin: "Platform admin",
   super_admin: "Super admin",
   promoter: "Promoter",
   school_admin: "School admin",
@@ -45,8 +45,9 @@ export async function POST(
   const { id } = await params;
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const target = await findUserById(id);
-    if (!target || target.orgOwnerId !== session.user.orgOwnerId) {
+    if (!target || target.orgOwnerId !== orgOwnerId) {
       return NextResponse.json({ error: "Account not found." }, { status: 404 });
     }
     if (target.passwordHash) {
@@ -64,7 +65,7 @@ export async function POST(
     const base = await inviteBaseUrl();
     const link = `${base}/accept-invite?token=${inviteToken}`;
     const result = await sendInviteEmail({
-      orgOwnerId: session.user.orgOwnerId,
+      orgOwnerId,
       to: target.email,
       name: target.name,
       link,
@@ -128,8 +129,9 @@ export async function PATCH(
   }
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const target = await findUserById(id);
-    if (!target || target.orgOwnerId !== session.user.orgOwnerId) {
+    if (!target || target.orgOwnerId !== orgOwnerId) {
       return NextResponse.json({ error: "Account not found." }, { status: 404 });
     }
     if (target.role === "super_admin") {
@@ -139,7 +141,7 @@ export async function PATCH(
       );
     }
 
-    const updated = await updateTeamMember(id, session.user.orgOwnerId, {
+    const updated = await updateTeamMember(id, orgOwnerId, {
       name: body.name,
       role,
       clientId: body.clientId,
@@ -150,7 +152,7 @@ export async function PATCH(
     }
 
     await appendTeamAuditLog(
-      session.user.orgOwnerId,
+      orgOwnerId,
       `Updated team member ${updated.name}${role ? ` — role set to ${ROLE_LABEL[role]}` : ""}`,
       { id: session.user.id, name: session.user.name ?? "Super admin", role: session.user.role },
     );
@@ -182,8 +184,9 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
     const target = await findUserById(id);
-    if (!target || target.orgOwnerId !== session.user.orgOwnerId) {
+    if (!target || target.orgOwnerId !== orgOwnerId) {
       return NextResponse.json({ error: "Account not found." }, { status: 404 });
     }
     if (target.role === "super_admin") {
@@ -194,7 +197,7 @@ export async function DELETE(
     }
     await deleteUser(id);
     await appendTeamAuditLog(
-      session.user.orgOwnerId,
+      orgOwnerId,
       `Removed team member ${target.name} (${target.email})`,
       { id: session.user.id, name: session.user.name ?? "Super admin", role: session.user.role },
     );

@@ -4,6 +4,7 @@ import { getWorkspace } from "@/lib/db/workspace";
 import { listTeamMembers } from "@/lib/db/users";
 import { buildBackupFiles } from "@/lib/export";
 import { createZip } from "@/lib/zip";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 
 /**
  * "Download everything" — a safety net independent of us or the database:
@@ -17,9 +18,10 @@ export async function GET() {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
+  const orgOwnerId = await getEffectiveOrgOwnerId(session);
   const [state, team] = await Promise.all([
-    getWorkspace(session.user.orgOwnerId),
-    listTeamMembers(session.user.orgOwnerId),
+    getWorkspace(orgOwnerId),
+    listTeamMembers(orgOwnerId),
   ]);
 
   const files = buildBackupFiles(

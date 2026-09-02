@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
 import { listNotifications } from "@/lib/db/notifications";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 
 /** Any signed-in account can read its own notifications — never anyone else's. */
 export async function GET() {
@@ -10,7 +11,8 @@ export async function GET() {
   }
 
   try {
-    const result = await listNotifications(session.user.orgOwnerId, session.user.id);
+    const orgOwnerId = await getEffectiveOrgOwnerId(session);
+    const result = await listNotifications(orgOwnerId, session.user.id);
     return NextResponse.json(result);
   } catch (err) {
     console.error("Failed to load notifications — is MONGODB_URI configured?", err);

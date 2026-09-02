@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
+import { getEffectiveOrgOwnerId } from "@/lib/active-org";
 import { emailService } from "@/lib/email-service";
 
 export async function POST(req: Request) {
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
   }
 
-  const result = await emailService.testEmail(session.user.orgOwnerId, to, body.clientId);
+  const orgOwnerId = await getEffectiveOrgOwnerId(session);
+  const result = await emailService.testEmail(orgOwnerId, to, body.clientId);
   return NextResponse.json(result, { status: result.success ? 200 : 500 });
 }

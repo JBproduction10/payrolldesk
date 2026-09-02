@@ -60,7 +60,7 @@ function ensureIndexes(db: Db): Promise<void> {
       db.collection("users").createIndex({ email: 1 }, { unique: true }),
       db.collection("notifications").createIndex({ orgOwnerId: 1, userId: 1, createdAt: -1 }),
       db.collection("notifications").createIndex({ id: 1 }, { unique: true }),
-      db.collection("organizations").createIndex({ ownerId: 1 }, { unique: true }),
+      db.collection("organizations").createIndex({ orgOwnerId: 1 }, { unique: true }),
     ])
       .then(() => undefined)
       .catch((err) => {

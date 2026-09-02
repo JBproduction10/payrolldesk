@@ -14,7 +14,7 @@ function organizationsCollection() {
   return getDb().then((db) => db.collection<OrganizationDoc>("organizations"));
 }
 
-/** All promoter organizations, newest first — for the platform admin's list view. */
+/** Every promoter organization, newest first — for the super_admin's Promoters page. */
 export async function listOrganizations(): Promise<Organization[]> {
   const orgs = await organizationsCollection();
   const rows = await orgs.find({}).sort({ createdAt: -1 }).toArray();
@@ -27,24 +27,31 @@ export async function getOrganizationById(id: string): Promise<Organization | nu
   return doc ? toOrganization(doc) : null;
 }
 
-/** The Organization a given promoter (super_admin) owns — one-to-one via ownerId. */
-export async function getOrganizationByOwnerId(ownerId: string): Promise<Organization | null> {
+export async function getOrganizationByOrgOwnerId(orgOwnerId: string): Promise<Organization | null> {
   const orgs = await organizationsCollection();
-  const doc = await orgs.findOne({ ownerId });
+  const doc = await orgs.findOne({ orgOwnerId });
   return doc ? toOrganization(doc) : null;
 }
 
+/**
+ * Creates a new promoter organization. `orgOwnerId` is the scoping key every
+ * Client/Employee/etc. under it will use — for a brand-new org, that's just
+ * its own id (self-anchored, no separate "owner account" needed). Pass an
+ * explicit `orgOwnerId` only when adopting an *existing* set of scoped data
+ * under a new Organization record (see scripts/backfill-organizations.ts).
+ */
 export async function createOrganization(params: {
   name: string;
-  ownerId: string;
   hasTreasuryCompany: boolean;
   treasuryCompanyName?: string;
+  orgOwnerId?: string;
 }): Promise<Organization> {
   const orgs = await organizationsCollection();
+  const id = `org_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   const doc: OrganizationDoc = {
-    _id: `org_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+    _id: id,
     name: params.name.trim(),
-    ownerId: params.ownerId,
+    orgOwnerId: params.orgOwnerId || id,
     hasTreasuryCompany: params.hasTreasuryCompany,
     treasuryCompanyName: params.hasTreasuryCompany
       ? params.treasuryCompanyName?.trim() || undefined
