@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import {
   Eye,
@@ -10,6 +10,8 @@ import {
   Send,
   History,
   Building2,
+  Plus,
+  Pencil,
 } from "lucide-react";
 import { money, formatDate, periodLabel, timeAgo } from "@/lib/format";
 import { paymentFor, schoolFinancials } from "@/lib/aggregate";
@@ -23,6 +25,7 @@ import type {
   RequisitionCategory,
   Student,
 } from "@/lib/types";
+import type { BrandColorKey } from "@/lib/colors";
 import {
   EmployeeStatusBadge,
   FeeStatusBadge,
@@ -32,6 +35,8 @@ import {
 import { PortalPayslipDialog } from "@/components/payroll/portal-payslip-dialog";
 import { PaymentHistoryDialog } from "@/components/payroll/payment-history-dialog";
 import { InitialsAvatar } from "@/components/payroll/initials-avatar";
+import { PortalSectionNav } from "@/components/portal/portal-section-nav";
+import { ColorSwatchPicker } from "@/components/payroll/color-swatch-picker";
 import { colorForIndex } from "@/lib/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +48,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
@@ -55,9 +61,11 @@ interface EmployeeRef {
 
 interface SchoolAdminEmployee extends EmployeeRef {
   email: string;
+  phone: string;
   departmentId: string;
   baseSalary: number;
   status: EmployeeStatus;
+  joinDate: string;
 }
 
 interface DepartmentRef {
@@ -65,6 +73,7 @@ interface DepartmentRef {
   name: string;
   description: string;
   headId: string | null;
+  color: string;
 }
 
 const TABS = ["students", "expenses", "employees", "departments", "requests", "payslips"] as const;
@@ -75,7 +84,11 @@ type Tab = (typeof TABS)[number];
  * *see* enrollment and financial entries but never edit them (that's the
  * Cashier's job) — its own capability is issuing requisitions ("bons de
  * commande") to Bonté Service. Payslips are here too, view-only, for
- * reference when preparing a payroll funding request.
+ * reference when preparing a payroll funding request. The one place this
+ * role DOES get full write access is its own staff roster: employees and
+ * departments for this school only (see /api/portal/employees and
+ * /api/portal/departments) — other schools, and org-wide payroll config,
+ * stay off limits.
  */
 export function SchoolAdminView({
   client,
@@ -153,107 +166,105 @@ export function SchoolAdminView({
         </div>
       </div>
 
-      <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {TAB_DEFS.map((tItem) => (
-          <button
-            key={tItem.key}
-            onClick={() => setTab(tItem.key)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === tItem.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <tItem.icon className="size-3.5" />
-            {tItem.label}
-          </button>
-        ))}
-      </div>
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <PortalSectionNav items={TAB_DEFS} value={tab} onChange={setTab} />
 
-      {tab === "students" && (
-        <StudentsReadOnly
-          client={client}
-          students={students}
-          feePayments={feePayments}
-          period={period}
-        />
-      )}
-      {tab === "expenses" && <ExpensesReadOnly client={client} expenses={expenses} />}
-      {tab === "employees" && (
-        <EmployeesReadOnly client={client} employees={employees} departments={departments} />
-      )}
-      {tab === "departments" && (
-        <DepartmentsReadOnly employees={employees} departments={departments} />
-      )}
-      {tab === "requests" && (
-        <RequestsTab
-          client={client}
-          requisitions={requisitions}
-          period={period}
-          onRefresh={onRefresh}
-        />
-      )}
-      {tab === "payslips" && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                  <th className="px-4 py-3 font-medium">{t("columnEmployee")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columnPeriod")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columnNetPay")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
-                  <th className="px-4 py-3 text-right font-medium">{t("columnView")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {payslips.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                      {t("noPayslipsYet")}
-                    </td>
-                  </tr>
-                ) : (
-                  payslips.map((p) => {
-                    const emp = byId.get(p.employeeId);
-                    return (
-                      <tr key={p.id}>
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {emp?.name ?? t("unknown")}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {periodLabel(p.period, locale)}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {money(p.net, client.currency, locale)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <PayslipStatusBadge status={p.status} />
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <PortalPayslipDialog
-                            payslip={p}
-                            employeeName={emp?.name ?? t("unknown")}
-                            employeePosition={emp?.position ?? ""}
-                            currency={client.currency}
-                            schoolName={client.name}
-                            trigger={
-                              <Button variant="outline" size="sm">
-                                <Eye className="size-3.5" />
-                                {t("view")}
-                              </Button>
-                            }
-                          />
+        <div className="min-w-0 flex-1">
+          {tab === "students" && (
+            <StudentsReadOnly
+              client={client}
+              students={students}
+              feePayments={feePayments}
+              period={period}
+            />
+          )}
+          {tab === "expenses" && <ExpensesReadOnly client={client} expenses={expenses} />}
+          {tab === "employees" && (
+            <EmployeesPanel
+              client={client}
+              employees={employees}
+              departments={departments}
+              onRefresh={onRefresh}
+            />
+          )}
+          {tab === "departments" && (
+            <DepartmentsPanel
+              employees={employees}
+              departments={departments}
+              onRefresh={onRefresh}
+            />
+          )}
+          {tab === "requests" && (
+            <RequestsTab
+              client={client}
+              requisitions={requisitions}
+              period={period}
+              onRefresh={onRefresh}
+            />
+          )}
+          {tab === "payslips" && (
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
+                      <th className="px-4 py-3 font-medium">{t("columnEmployee")}</th>
+                      <th className="px-4 py-3 font-medium">{t("columnPeriod")}</th>
+                      <th className="px-4 py-3 font-medium">{t("columnNetPay")}</th>
+                      <th className="px-4 py-3 font-medium">{t("columnStatus")}</th>
+                      <th className="px-4 py-3 text-right font-medium">{t("columnView")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {payslips.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
+                          {t("noPayslipsYet")}
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ) : (
+                      payslips.map((p) => {
+                        const emp = byId.get(p.employeeId);
+                        return (
+                          <tr key={p.id}>
+                            <td className="px-4 py-3 font-medium text-foreground">
+                              {emp?.name ?? t("unknown")}
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {periodLabel(p.period, locale)}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-foreground">
+                              {money(p.net, client.currency, locale)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <PayslipStatusBadge status={p.status} />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <PortalPayslipDialog
+                                payslip={p}
+                                employeeName={emp?.name ?? t("unknown")}
+                                employeePosition={emp?.position ?? ""}
+                                currency={client.currency}
+                                schoolName={client.name}
+                                trigger={
+                                  <Button variant="outline" size="sm">
+                                    <Eye className="size-3.5" />
+                                    {t("view")}
+                                  </Button>
+                                }
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -387,152 +398,613 @@ function ExpensesReadOnly({ client, expenses }: { client: Client; expenses: Expe
   );
 }
 
-/* ------------------------------ read-only employees ------------------------------ */
+/* ------------------------------ employees (school-scoped) ------------------------------ */
 
-function EmployeesReadOnly({
+function EmployeesPanel({
   client,
   employees,
   departments,
+  onRefresh,
 }: {
   client: Client;
   employees: SchoolAdminEmployee[];
   departments: DepartmentRef[];
+  onRefresh: () => void;
 }) {
   const t = useTranslations("schoolAdminView");
   const locale = useLocale() as "en" | "fr";
   const deptName = new Map(departments.map((d) => [d.id, d.name]));
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-              <th className="px-4 py-3 font-medium">{t("columnEmployeeName")}</th>
-              <th className="px-4 py-3 font-medium">{t("columnDepartment")}</th>
-              <th className="px-4 py-3 font-medium">{t("columnEmail")}</th>
-              <th className="px-4 py-3 font-medium">{t("columnBaseSalary")}</th>
-              <th className="px-4 py-3 font-medium">{t("columnEmployeeStatus")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {employees.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                  {t("noEmployeesYet")}
-                </td>
+    <div>
+      <div className="mb-4 flex justify-end">
+        <PortalEmployeeFormDialog
+          client={client}
+          departments={departments}
+          onSaved={onRefresh}
+          trigger={
+            <Button>
+              <Plus className="size-4" />
+              {t("addEmployee")}
+            </Button>
+          }
+        />
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
+                <th className="px-4 py-3 font-medium">{t("columnEmployeeName")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnDepartment")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnEmail")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnBaseSalary")}</th>
+                <th className="px-4 py-3 font-medium">{t("columnEmployeeStatus")}</th>
+                <th className="px-4 py-3 font-medium text-right">{t("columnActions")}</th>
               </tr>
-            ) : (
-              employees.map((e, i) => (
-                <tr key={e.id}>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <InitialsAvatar name={e.name} color={colorForIndex(i)} size="sm" />
-                      <div>
-                        <div className="font-medium text-foreground">{e.name}</div>
-                        <div className="text-xs text-muted-foreground">{e.position}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {deptName.get(e.departmentId) ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.email}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    {money(e.baseSalary, client.currency, locale)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <EmployeeStatusBadge status={e.status} />
+            </thead>
+            <tbody className="divide-y divide-border">
+              {employees.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                    {t("noEmployeesYet")}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                employees.map((e, i) => (
+                  <tr key={e.id}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <InitialsAvatar name={e.name} color={colorForIndex(i)} size="sm" />
+                        <div>
+                          <div className="font-medium text-foreground">{e.name}</div>
+                          <div className="text-xs text-muted-foreground">{e.position}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {deptName.get(e.departmentId) ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{e.email}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {money(e.baseSalary, client.currency, locale)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <EmployeeStatusBadge status={e.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end">
+                        <PortalEmployeeFormDialog
+                          client={client}
+                          departments={departments}
+                          employee={e}
+                          onSaved={onRefresh}
+                          trigger={
+                            <Button variant="ghost" size="icon-sm">
+                              <Pencil className="size-3.5" />
+                            </Button>
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ------------------------------ read-only departments ------------------------------ */
+interface EmployeeFormState {
+  name: string;
+  email: string;
+  phone: string;
+  departmentId: string;
+  position: string;
+  baseSalary: string;
+  joinDate: string;
+  status: EmployeeStatus;
+}
 
-function DepartmentsReadOnly({
-  employees,
+const EMPLOYEE_FORM_EMPTY: EmployeeFormState = {
+  name: "",
+  email: "",
+  phone: "",
+  departmentId: "",
+  position: "",
+  baseSalary: "",
+  joinDate: "",
+  status: "active",
+};
+
+function PortalEmployeeFormDialog({
+  client,
   departments,
+  employee,
+  onSaved,
+  trigger,
 }: {
-  employees: SchoolAdminEmployee[];
+  client: Client;
   departments: DepartmentRef[];
+  employee?: SchoolAdminEmployee;
+  onSaved: () => void;
+  trigger: ReactElement;
 }) {
-  const t = useTranslations("schoolAdminView");
+  const t = useTranslations("employeeForm");
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<EmployeeFormState>(EMPLOYEE_FORM_EMPTY);
+  const [saving, setSaving] = useState(false);
+  const isEdit = Boolean(employee);
 
-  if (departments.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center text-muted-foreground">
-        {t("noDepartmentsYet")}
-      </div>
-    );
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setForm(
+        employee
+          ? {
+              name: employee.name,
+              email: employee.email,
+              phone: employee.phone,
+              departmentId: employee.departmentId,
+              position: employee.position,
+              baseSalary: String(employee.baseSalary),
+              joinDate: employee.joinDate,
+              status: employee.status,
+            }
+          : { ...EMPLOYEE_FORM_EMPTY, departmentId: departments[0]?.id ?? "" },
+      );
+    }
+  }
+
+  const valid = Boolean(
+    form.name.trim() &&
+      form.email.trim() &&
+      form.departmentId &&
+      form.position.trim() &&
+      Number(form.baseSalary) > 0,
+  );
+
+  async function handleSubmit() {
+    if (!valid || saving) return;
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        departmentId: form.departmentId,
+        position: form.position.trim(),
+        baseSalary: Number(form.baseSalary),
+        joinDate: form.joinDate || new Date().toISOString().slice(0, 10),
+        status: form.status,
+      };
+      const res = await fetch("/api/portal/employees", {
+        method: isEdit ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          isEdit ? { id: employee!.id, patch: payload } : payload,
+        ),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Request failed.");
+      }
+      toast.add({
+        title: isEdit
+          ? t("updatedToast", { name: form.name.trim() })
+          : t("addedToast", { name: form.name.trim() }),
+        type: "success",
+      });
+      setOpen(false);
+      onSaved();
+    } catch (err) {
+      toast.add({
+        title: err instanceof Error ? err.message : "Something went wrong.",
+        type: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {departments.map((d) => {
-        const staff = employees.filter((e) => e.departmentId === d.id);
-        const head = employees.find((e) => e.id === d.headId);
-        const visible = staff.slice(0, 6);
-        const extra = staff.length - visible.length;
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger render={trigger} />
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
+          <DialogDescription>
+            {isEdit
+              ? t("editDescription")
+              : t("addDescription", { schoolName: client.name })}
+          </DialogDescription>
+        </DialogHeader>
 
-        return (
-          <div
-            key={d.id}
-            className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm"
-          >
-            <div className="mb-3 flex items-start justify-between">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                <Building2 className="size-4.5" />
-              </div>
-              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                {t("peopleCount", { count: staff.length })}
-              </span>
-            </div>
-
-            <h3 className="font-heading text-lg font-semibold text-foreground">{d.name}</h3>
-            <p className="mt-0.5 text-sm text-muted-foreground">{d.description}</p>
-
-            <div className="mt-4 rounded-xl bg-muted/60 p-3">
-              <div className="text-xs text-muted-foreground">{t("columnHead")}</div>
-              <div className="truncate text-sm font-medium text-foreground">
-                {head?.name ?? t("unassigned")}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="mb-2 text-xs font-medium text-muted-foreground">
-                {t("members")}
-              </div>
-              <div className="flex items-center">
-                {visible.map((e, i) => (
-                  <InitialsAvatar
-                    key={e.id}
-                    name={e.name}
-                    color={colorForIndex(i)}
-                    size="sm"
-                    className="-ml-2 border-2 border-card first:ml-0"
-                  />
-                ))}
-                {extra > 0 && (
-                  <span className="-ml-2 flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[11px] font-medium text-muted-foreground">
-                    +{extra}
-                  </span>
-                )}
-                {staff.length === 0 && (
-                  <span className="text-xs text-muted-foreground">{t("noMembersYet")}</span>
-                )}
-              </div>
-            </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <Label htmlFor="pef-name">{t("fullName")}</Label>
+            <Input
+              id="pef-name"
+              placeholder={t("fullNamePlaceholder")}
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            />
           </div>
-        );
-      })}
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-email">{t("email")}</Label>
+            <Input
+              id="pef-email"
+              type="email"
+              placeholder={`name@${client.domain}`}
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-phone">{t("phone")}</Label>
+            <Input
+              id="pef-phone"
+              placeholder="+1 555 000 0000"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-dept">{t("department")}</Label>
+            <NativeSelect
+              id="pef-dept"
+              className="w-full"
+              value={form.departmentId}
+              onChange={(e) => setForm((f) => ({ ...f, departmentId: e.target.value }))}
+            >
+              <NativeSelectOption value="" disabled>
+                {t("selectDepartment")}
+              </NativeSelectOption>
+              {departments.map((d) => (
+                <NativeSelectOption key={d.id} value={d.id}>
+                  {d.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-position">{t("position")}</Label>
+            <Input
+              id="pef-position"
+              placeholder={t("positionPlaceholder")}
+              value={form.position}
+              onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-salary">{t("baseSalary", { currency: client.currency })}</Label>
+            <Input
+              id="pef-salary"
+              type="number"
+              min={0}
+              placeholder="6000"
+              value={form.baseSalary}
+              onChange={(e) => setForm((f) => ({ ...f, baseSalary: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-join">{t("joinDate")}</Label>
+            <Input
+              id="pef-join"
+              type="date"
+              value={form.joinDate}
+              onChange={(e) => setForm((f) => ({ ...f, joinDate: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pef-status">{t("status")}</Label>
+            <NativeSelect
+              id="pef-status"
+              className="w-full"
+              value={form.status}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, status: e.target.value as EmployeeStatus }))
+              }
+            >
+              <NativeSelectOption value="active">{t("statusActive")}</NativeSelectOption>
+              <NativeSelectOption value="leave">{t("statusLeave")}</NativeSelectOption>
+              <NativeSelectOption value="inactive">{t("statusInactive")}</NativeSelectOption>
+            </NativeSelect>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleSubmit} disabled={!valid || saving}>
+            {isEdit ? t("saveChanges") : t("addEmployee")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ------------------------------ departments (school-scoped) ------------------------------ */
+
+function DepartmentsPanel({
+  employees,
+  departments,
+  onRefresh,
+}: {
+  employees: SchoolAdminEmployee[];
+  departments: DepartmentRef[];
+  onRefresh: () => void;
+}) {
+  const t = useTranslations("schoolAdminView");
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <PortalDepartmentFormDialog
+          employees={employees}
+          onSaved={onRefresh}
+          trigger={
+            <Button>
+              <Plus className="size-4" />
+              {t("addDepartment")}
+            </Button>
+          }
+        />
+      </div>
+
+      {departments.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center text-muted-foreground">
+          {t("noDepartmentsYet")}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {departments.map((d) => {
+            const staff = employees.filter((e) => e.departmentId === d.id);
+            const head = employees.find((e) => e.id === d.headId);
+            const visible = staff.slice(0, 6);
+            const extra = staff.length - visible.length;
+
+            return (
+              <div
+                key={d.id}
+                className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm"
+              >
+                <div className="mb-3 flex items-start justify-between">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                    <Building2 className="size-4.5" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                      {t("peopleCount", { count: staff.length })}
+                    </span>
+                    <PortalDepartmentFormDialog
+                      employees={employees}
+                      department={d}
+                      onSaved={onRefresh}
+                      trigger={
+                        <Button variant="ghost" size="icon-sm">
+                          <Pencil className="size-3.5" />
+                        </Button>
+                      }
+                    />
+                  </div>
+                </div>
+
+                <h3 className="font-heading text-lg font-semibold text-foreground">{d.name}</h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">{d.description}</p>
+
+                <div className="mt-4 rounded-xl bg-muted/60 p-3">
+                  <div className="text-xs text-muted-foreground">{t("columnHead")}</div>
+                  <div className="truncate text-sm font-medium text-foreground">
+                    {head?.name ?? t("unassigned")}
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="mb-2 text-xs font-medium text-muted-foreground">
+                    {t("members")}
+                  </div>
+                  <div className="flex items-center">
+                    {visible.map((e, i) => (
+                      <InitialsAvatar
+                        key={e.id}
+                        name={e.name}
+                        color={colorForIndex(i)}
+                        size="sm"
+                        className="-ml-2 border-2 border-card first:ml-0"
+                      />
+                    ))}
+                    {extra > 0 && (
+                      <span className="-ml-2 flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[11px] font-medium text-muted-foreground">
+                        +{extra}
+                      </span>
+                    )}
+                    {staff.length === 0 && (
+                      <span className="text-xs text-muted-foreground">{t("noMembersYet")}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+}
+
+interface DepartmentFormState {
+  name: string;
+  description: string;
+  headId: string;
+  color: BrandColorKey;
+}
+
+const DEPARTMENT_FORM_EMPTY: DepartmentFormState = {
+  name: "",
+  description: "",
+  headId: "",
+  color: "pine",
+};
+
+function PortalDepartmentFormDialog({
+  employees,
+  department,
+  onSaved,
+  trigger,
+}: {
+  employees: SchoolAdminEmployee[];
+  department?: DepartmentRef;
+  onSaved: () => void;
+  trigger: ReactElement;
+}) {
+  const t = useTranslations("departmentForm");
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<DepartmentFormState>(DEPARTMENT_FORM_EMPTY);
+  const [saving, setSaving] = useState(false);
+  const isEdit = Boolean(department);
+
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setForm(
+        department
+          ? {
+              name: department.name,
+              description: department.description,
+              headId: department.headId ?? "",
+              color: (department.color as BrandColorKey) ?? "pine",
+            }
+          : DEPARTMENT_FORM_EMPTY,
+      );
+    }
+  }
+
+  const membersOfDept = department
+    ? employees.filter((e) => e.departmentId === department.id)
+    : employees;
+
+  const valid = form.name.trim().length > 0;
+
+  async function handleSubmit() {
+    if (!valid || saving) return;
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        headId: form.headId || null,
+        color: form.color,
+      };
+      const res = await fetch("/api/portal/departments", {
+        method: isEdit ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          isEdit ? { id: department!.id, patch: payload } : payload,
+        ),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Request failed.");
+      }
+      toast.add({
+        title: isEdit
+          ? t("updatedToast", { name: form.name.trim() })
+          : t("createdToast", { name: form.name.trim() }),
+        type: "success",
+      });
+      setOpen(false);
+      onSaved();
+    } catch (err) {
+      toast.add({
+        title: err instanceof Error ? err.message : "Something went wrong.",
+        type: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger render={trigger} />
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? t("editTitle") : t("addTitle")}</DialogTitle>
+          <DialogDescription>
+            {isEdit ? t("editDescription") : t("addDescriptionShort")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pdf-name">{t("name")}</Label>
+            <Input
+              id="pdf-name"
+              placeholder={t("namePlaceholder")}
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pdf-desc">{t("description")}</Label>
+            <Input
+              id="pdf-desc"
+              placeholder={t("descriptionPlaceholder")}
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pdf-head">{t("head")}</Label>
+            <NativeSelect
+              id="pdf-head"
+              className="w-full"
+              value={form.headId}
+              onChange={(e) => setForm((f) => ({ ...f, headId: e.target.value }))}
+            >
+              <NativeSelectOption value="">{t("noHead")}</NativeSelectOption>
+              {membersOfDept.map((e) => (
+                <NativeSelectOption key={e.id} value={e.id}>
+                  {e.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{t("colour")}</Label>
+            <ColorSwatchPicker
+              value={form.color}
+              onChange={(c) => setForm((f) => ({ ...f, color: c }))}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleSubmit} disabled={!valid || saving}>
+            {isEdit ? t("saveChanges") : t("addDepartment")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

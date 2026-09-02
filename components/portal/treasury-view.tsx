@@ -6,6 +6,7 @@ import { Check, X, Wallet, Clock, CircleCheck, Landmark, Truck, Plus } from "luc
 import { money, periodLabel, timeAgo } from "@/lib/format";
 import type { Currency, RequisitionCategory, RequisitionStatus, SupplyCategory } from "@/lib/types";
 import { RequisitionStatusBadge } from "@/components/payroll/status-badges";
+import { PortalSectionNav } from "@/components/portal/portal-section-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -137,24 +138,14 @@ export function TreasuryView({
         </div>
       </div>
 
-      <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {TAB_DEFS.map((tItem) => (
-          <button
-            key={tItem.key}
-            onClick={() => setTab(tItem.key)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === tItem.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <tItem.icon className="size-3.5" />
-            {tItem.label}
-            {tItem.count > 0 && <span className="text-xs opacity-70">({tItem.count})</span>}
-          </button>
-        ))}
-      </div>
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <PortalSectionNav
+          items={TAB_DEFS.map((d) => ({ ...d, badge: d.count > 0 ? d.count : undefined }))}
+          value={tab}
+          onChange={setTab}
+        />
 
+        <div className="min-w-0 flex-1">
       {tab === "pending" && (
         <RequisitionList
           rows={pending}
@@ -177,6 +168,8 @@ export function TreasuryView({
       {tab === "deliveries" && (
         <DeliveriesPanel clients={clients} deliveries={deliveries} onRefresh={onRefresh} />
       )}
+        </div>
+      </div>
     </div>
   );
 }

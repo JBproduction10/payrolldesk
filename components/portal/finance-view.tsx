@@ -8,6 +8,7 @@ import { paymentFor, type SchoolFinancials } from "@/lib/aggregate";
 import type { Client, FeePayment, Payslip, Student } from "@/lib/types";
 import { FeeStatusBadge, PayslipStatusBadge } from "@/components/payroll/status-badges";
 import { PortalPayslipDialog } from "@/components/payroll/portal-payslip-dialog";
+import { PortalSectionNav } from "@/components/portal/portal-section-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -72,23 +73,10 @@ export function FinanceView({
         </p>
       </div>
 
-      <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {TAB_DEFS.map((tItem) => (
-          <button
-            key={tItem.key}
-            onClick={() => setTab(tItem.key)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === tItem.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <tItem.icon className="size-3.5" />
-            {tItem.label}
-          </button>
-        ))}
-      </div>
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <PortalSectionNav items={TAB_DEFS} value={tab} onChange={setTab} />
 
+        <div className="min-w-0 flex-1">
       {tab === "payslips" && (
         <>
           <div className="relative mb-4 max-w-sm">
@@ -249,6 +237,8 @@ export function FinanceView({
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

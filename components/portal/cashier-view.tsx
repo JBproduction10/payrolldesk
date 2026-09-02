@@ -19,6 +19,7 @@ import { CYCLES, CYCLE_CLASSES, cycleLabel } from "@/lib/academic";
 import { FeeStatusBadge } from "@/components/payroll/status-badges";
 import { PaymentHistoryDialog } from "@/components/payroll/payment-history-dialog";
 import { ConfirmDeleteDialog } from "@/components/payroll/confirm-delete-dialog";
+import { PortalSectionNav } from "@/components/portal/portal-section-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,35 +113,24 @@ export function CashierView({
         </div>
       </div>
 
-      <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-        {TAB_DEFS.map((tItem) => (
-          <button
-            key={tItem.key}
-            onClick={() => setTab(tItem.key)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === tItem.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <tItem.icon className="size-3.5" />
-            {tItem.label}
-          </button>
-        ))}
-      </div>
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <PortalSectionNav items={TAB_DEFS} value={tab} onChange={setTab} />
 
-      {tab === "students" && (
-        <StudentsTab
-          client={client}
-          students={students}
-          feePayments={feePayments}
-          period={period}
-          onRefresh={onRefresh}
-        />
-      )}
-      {tab === "expenses" && (
-        <ExpensesTab client={client} expenses={expenses} onRefresh={onRefresh} />
-      )}
+        <div className="min-w-0 flex-1">
+          {tab === "students" && (
+            <StudentsTab
+              client={client}
+              students={students}
+              feePayments={feePayments}
+              period={period}
+              onRefresh={onRefresh}
+            />
+          )}
+          {tab === "expenses" && (
+            <ExpensesTab client={client} expenses={expenses} onRefresh={onRefresh} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

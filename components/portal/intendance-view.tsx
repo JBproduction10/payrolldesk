@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { PortalSectionNav } from "@/components/portal/portal-section-nav";
 import {
   Dialog,
   DialogTrigger,
@@ -135,32 +136,21 @@ export function IntendanceView({
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-          {TAB_DEFS.map((tItem) => (
-            <button
-              key={tItem.key}
-              onClick={() => setTab(tItem.key)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                tab === tItem.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <tItem.icon className="size-3.5" />
-              {tItem.label}
-            </button>
-          ))}
-        </div>
-
+      <div className="mb-4 flex justify-end gap-3">
         {tab === "sales" && <RecordSaleDialog knownItems={knownItems} onRefresh={onRefresh} />}
         {tab === "counts" && <RecordCountDialog knownItems={knownItems} onRefresh={onRefresh} />}
       </div>
 
-      {tab === "stock" && <StockTable rows={stock} />}
-      {tab === "sales" && <SalesList rows={sales} currency={client?.currency} />}
-      {tab === "deliveries" && <DeliveriesList rows={deliveries} />}
-      {tab === "counts" && <CountsList rows={inventoryCounts} />}
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <PortalSectionNav items={TAB_DEFS} value={tab} onChange={setTab} />
+
+        <div className="min-w-0 flex-1">
+          {tab === "stock" && <StockTable rows={stock} />}
+          {tab === "sales" && <SalesList rows={sales} currency={client?.currency} />}
+          {tab === "deliveries" && <DeliveriesList rows={deliveries} />}
+          {tab === "counts" && <CountsList rows={inventoryCounts} />}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { getDb } from "../mongodb";
 import type {
+  Department,
+  Employee,
   Expense,
   FeePayment,
   FeeStatus,
@@ -318,6 +320,139 @@ export async function removeExpenseScoped(
       `Removed expense: ${e?.description ?? ""}`,
       actor,
       true,
+    );
+  });
+}
+
+/* ------------------------ scoped: departments & employees ------------------------ */
+//
+// Lets a school_admin manage their own school's roster from the portal —
+// the same records the super_admin's Employees/Departments pages edit,
+// just scoped to one clientId. Every mutation double-checks that any
+// cross-referenced id (a department's head, an employee's department)
+// actually belongs to that same client, so a school admin can never point
+// a record at another school's staff.
+
+export async function addDepartmentScoped(
+  orgOwnerId: string,
+  clientId: string,
+  input: Omit<Department, "id" | "clientId">,
+  actor: LogActor,
+): Promise<Department> {
+  const department: Department = { ...input, id: uid("d"), clientId };
+  await mutateWorkspace(orgOwnerId, (s) => {
+    if (department.headId && !s.employees.some((e) => e.id === department.headId && e.clientId === clientId)) {
+      department.headId = null;
+    }
+    return withLog(
+      { ...s, departments: [...s.departments, department] },
+      clientId,
+      "department",
+      `Created department ${department.name}`,
+      actor,
+    );
+  });
+  return department;
+}
+
+export async function updateDepartmentScoped(
+  orgOwnerId: string,
+  clientId: string,
+  departmentId: string,
+  patch: Partial<Department>,
+  actor: LogActor,
+): Promise<void> {
+  await mutateWorkspace(orgOwnerId, (s) => {
+    const before = s.departments.find((d) => d.id === departmentId && d.clientId === clientId);
+    if (!before) return s;
+    const safePatch = { ...patch };
+    if (
+      safePatch.headId &&
+      !s.employees.some((e) => e.id === safePatch.headId && e.clientId === clientId)
+    ) {
+      delete safePatch.headId;
+    }
+    return withLog(
+      {
+        ...s,
+        departments: s.departments.map((d) =>
+          d.id === departmentId && d.clientId === clientId ? { ...d, ...safePatch } : d,
+        ),
+      },
+      clientId,
+      "department",
+      `Updated department ${before.name}`,
+      actor,
+    );
+  });
+}
+
+export async function addEmployeeScoped(
+  orgOwnerId: string,
+  clientId: string,
+  input: Omit<Employee, "id" | "clientId" | "code" | "values">,
+  actor: LogActor,
+): Promise<Employee> {
+  let employee!: Employee;
+  await mutateWorkspace(orgOwnerId, (s) => {
+    if (!s.departments.some((d) => d.id === input.departmentId && d.clientId === clientId)) {
+      throw new Error("Department does not belong to this school.");
+    }
+    const client = s.clients.find((c) => c.id === clientId);
+    employee = {
+      ...input,
+      id: uid("e"),
+      clientId,
+      code: `${(client?.name ?? "EM").slice(0, 2).toUpperCase()}-${Math.floor(
+        1000 + Math.random() * 9000,
+      )}`,
+      values: {},
+    };
+    return withLog(
+      { ...s, employees: [...s.employees, employee] },
+      clientId,
+      "employee",
+      `Added employee ${employee.name}`,
+      actor,
+    );
+  });
+  return employee;
+}
+
+export async function updateEmployeeScoped(
+  orgOwnerId: string,
+  clientId: string,
+  employeeId: string,
+  patch: Partial<Employee>,
+  actor: LogActor,
+): Promise<void> {
+  await mutateWorkspace(orgOwnerId, (s) => {
+    const before = s.employees.find((e) => e.id === employeeId && e.clientId === clientId);
+    if (!before) return s;
+    if (
+      patch.departmentId &&
+      !s.departments.some((d) => d.id === patch.departmentId && d.clientId === clientId)
+    ) {
+      throw new Error("Department does not belong to this school.");
+    }
+    // Compensation changes are the sensitive case worth flagging by name,
+    // same as the super_admin dashboard's own edit path.
+    const salaryChanged =
+      patch.baseSalary !== undefined && patch.baseSalary !== before.baseSalary;
+    return withLog(
+      {
+        ...s,
+        employees: s.employees.map((e) =>
+          e.id === employeeId && e.clientId === clientId ? { ...e, ...patch } : e,
+        ),
+      },
+      clientId,
+      "employee",
+      salaryChanged
+        ? `Changed ${before.name}'s base salary from ${before.baseSalary} to ${patch.baseSalary}`
+        : `Updated ${before.name}`,
+      actor,
+      salaryChanged,
     );
   });
 }

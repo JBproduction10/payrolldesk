@@ -137,10 +137,12 @@ export async function getPortalData(scope: PortalScope) {
   }
 
   if (scope.role === "school_admin") {
-    // Same view-only roster ecole-bilan gives its school admins: the full
-    // employee directory and department breakdown, alongside the existing
-    // students/expenses/requests/payslips tabs. Still no write access here —
-    // editing staff records stays with the network admin (super_admin).
+    // Same roster ecole-bilan gives its school admins — now with write
+    // access too: a school admin can add/update their own school's
+    // employees and departments via /api/portal/employees and
+    // /api/portal/departments (see lib/db/workspace.ts's *Scoped helpers).
+    // Editing OTHER schools' staff, or the org-wide student/payroll
+    // config, still stays with the network admin (super_admin).
     return {
       role: scope.role,
       period: state.period,
@@ -162,9 +164,11 @@ export async function getPortalData(scope: PortalScope) {
           name: e.name,
           position: e.position,
           email: e.email,
+          phone: e.phone,
           departmentId: e.departmentId,
           baseSalary: e.baseSalary,
           status: e.status,
+          joinDate: e.joinDate,
         })),
       departments: state.departments
         .filter((d) => d.clientId === client.id)
@@ -173,6 +177,7 @@ export async function getPortalData(scope: PortalScope) {
           name: d.name,
           description: d.description,
           headId: d.headId,
+          color: d.color,
         })),
     };
   }

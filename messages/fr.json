@@ -550,7 +550,8 @@
     "saveChanges": "Enregistrer",
     "addDepartment": "Ajouter un département",
     "updatedToast": "{name} mis à jour",
-    "createdToast": "{name} créé"
+    "createdToast": "{name} créé",
+    "addDescriptionShort": "Créer un nouveau département pour votre école."
   },
   "clientForm": {
     "editTitle": "Modifier le client",
@@ -742,7 +743,7 @@
     "expensesThisMonth": "Dépenses ce mois-ci"
   },
   "schoolAdminView": {
-    "subtitle": "Liste et finances en lecture seule — envoyez des demandes à Bonté Service pour tout ce dont l'école a besoin",
+    "subtitle": "Gérez le personnel de votre école — les inscriptions et écritures financières sont en lecture seule, et les demandes sont envoyées à Bonté Service.",
     "students": "Élèves",
     "feesCollected": "Frais perçus — {period}",
     "feesOutstanding": "Frais impayés",
@@ -807,7 +808,10 @@
     "members": "Membres",
     "unassigned": "Non assigné",
     "noMembersYet": "Aucun membre pour l'instant",
-    "noDepartmentsYet": "Aucun département configuré pour l'instant."
+    "noDepartmentsYet": "Aucun département configuré pour l'instant.",
+    "addEmployee": "Ajouter un employé",
+    "addDepartment": "Ajouter un département",
+    "columnActions": "Actions"
   },
   "promoterView": {
     "title": "Bilan du groupe",

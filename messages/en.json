@@ -559,7 +559,8 @@
     "saveChanges": "Save Changes",
     "addDepartment": "Add Department",
     "updatedToast": "Updated {name}",
-    "createdToast": "Created {name}"
+    "createdToast": "Created {name}",
+    "addDescriptionShort": "Create a new department for your school."
   },
   "clientForm": {
     "editTitle": "Edit client",
@@ -751,7 +752,7 @@
     "expensesThisMonth": "Expenses this month"
   },
   "schoolAdminView": {
-    "subtitle": "View-only roster & finances — send requests to Bonté Service for anything the school needs",
+    "subtitle": "Manage your school's staff roster — enrollment and financial entries are view-only, and requests go to Bonté Service.",
     "students": "Students",
     "feesCollected": "Fees collected — {period}",
     "feesOutstanding": "Fees outstanding",
@@ -816,7 +817,10 @@
     "members": "Members",
     "unassigned": "Unassigned",
     "noMembersYet": "No members yet",
-    "noDepartmentsYet": "No departments set up yet."
+    "noDepartmentsYet": "No departments set up yet.",
+    "addEmployee": "Add Employee",
+    "addDepartment": "Add Department",
+    "columnActions": "Actions"
   },
   "promoterView": {
     "title": "Group Balance Sheet",

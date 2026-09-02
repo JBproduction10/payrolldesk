@@ -114,9 +114,11 @@ interface EmployeeRef {
 
 interface SchoolAdminEmployeeRef extends EmployeeRef {
   email: string;
+  phone: string;
   departmentId: string;
   baseSalary: number;
   status: Employee["status"];
+  joinDate: string;
 }
 
 interface DepartmentRef {
@@ -124,6 +126,7 @@ interface DepartmentRef {
   name: string;
   description: string;
   headId: string | null;
+  color: string;
 }
 
 type PortalData =
