@@ -1,8 +1,9 @@
 import NextAuth, { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { findUserByEmail } from "@/lib/db/users";
+import { findUserByEmail, findUserById } from "@/lib/db/users";
 import { getOrganizationByOwnerId } from "@/lib/db/organizations";
+import { verifyImpersonationToken } from "@/lib/impersonation-token";
 
 export const authOptions = {
   session: {
@@ -102,6 +103,62 @@ export const authOptions = {
         };
       },
     }),
+
+    // Hands off a session between a platform_admin and a promoter's
+    // super_admin (and back) using a short-lived signed token instead of a
+    // password — see lib/impersonation-token.ts. Only ever invoked
+    // programmatically by our own "switch promoter" / "exit" UI, never
+    // shown as a sign-in option.
+    CredentialsProvider({
+      id: "impersonate",
+      name: "Switch workspace",
+      credentials: {
+        token: { label: "Token", type: "text" },
+      },
+
+      async authorize(credentials) {
+        const token = credentials?.token;
+        if (typeof token !== "string") return null;
+
+        const payload = verifyImpersonationToken(token);
+        if (!payload) return null;
+
+        let target;
+        try {
+          target = await findUserById(payload.targetUserId);
+        } catch (err) {
+          console.error("Impersonation lookup failed:", err);
+          throw new Error("Couldn't reach the database. Please try again shortly.");
+        }
+        if (!target) return null;
+
+        if (payload.impersonatorId) {
+          // Entering impersonation: only a real platform_admin can hand off
+          // to a promoter's super_admin, and only into an active org.
+          const impersonator = await findUserById(payload.impersonatorId);
+          if (!impersonator || impersonator.role !== "platform_admin") return null;
+          if (target.role !== "super_admin") return null;
+
+          const org = await getOrganizationByOwnerId(target._id);
+          if (org && org.status === "suspended") return null;
+        } else {
+          // Exiting back to the platform admin's own account.
+          if (target.role !== "platform_admin") return null;
+        }
+
+        return {
+          id: target._id,
+          name: target.name,
+          email: target.email,
+          role: target.role,
+          orgOwnerId: target.orgOwnerId,
+          clientId: target.clientId,
+          employeeId: target.employeeId,
+          impersonatorId: payload.impersonatorId,
+          impersonatorName: payload.impersonatorName,
+        };
+      },
+    }),
   ],
 
   callbacks: {
@@ -112,6 +169,10 @@ export const authOptions = {
         token.orgOwnerId = user.orgOwnerId;
         token.clientId = user.clientId;
         token.employeeId = user.employeeId;
+        // Only set on sign-in (never carried over implicitly) so exiting
+        // impersonation — a fresh sign-in with no impersonatorId — clears it.
+        token.impersonatorId = user.impersonatorId;
+        token.impersonatorName = user.impersonatorName;
       }
 
       return token;
@@ -124,6 +185,8 @@ export const authOptions = {
         session.user.orgOwnerId = token.orgOwnerId;
         session.user.clientId = token.clientId ?? null;
         session.user.employeeId = token.employeeId ?? null;
+        session.user.impersonatorId = token.impersonatorId ?? null;
+        session.user.impersonatorName = token.impersonatorName ?? null;
       }
 
       return session;

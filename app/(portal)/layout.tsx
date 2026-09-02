@@ -11,6 +11,9 @@ export default async function PortalLayout({
   if (!session?.user) {
     redirect("/login");
   }
+  if (session.user.role === "platform_admin") {
+    redirect("/promoters");
+  }
   if (session.user.role === "super_admin") {
     redirect("/dashboard");
   }

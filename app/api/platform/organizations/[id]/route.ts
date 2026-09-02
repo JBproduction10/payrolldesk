@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import auth from "@/auth";
+import { hasPlatformAdminAuthority } from "@/lib/platform-auth";
 import { getOrganizationById, setOrganizationStatus } from "@/lib/db/organizations";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "platform_admin") {
+  if (!hasPlatformAdminAuthority(session)) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 

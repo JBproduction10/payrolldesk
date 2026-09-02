@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ClientSwitcher } from "./client-switcher";
+import { PromoterSwitcher } from "./promoter-switcher";
 import { MobileNav } from "./mobile-nav";
 import { LanguageSwitcher } from "./language-switcher";
 import { NotificationBell } from "./notification-bell";
@@ -73,6 +74,9 @@ export function Topbar() {
       <MobileNav open={mobileOpen} onOpenChange={setMobileOpen} />
 
       <ClientSwitcher />
+      {session?.user?.impersonatorId && (
+        <PromoterSwitcher activeOwnerId={session.user.orgOwnerId} />
+      )}
 
       <div className="relative ml-auto w-full max-w-sm">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />

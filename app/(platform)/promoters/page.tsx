@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -15,9 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { CreateOrganizationDialog } from "@/components/platform/create-organization-dialog";
+import { enterImpersonation } from "@/lib/use-impersonation";
 import type { Organization } from "@/lib/types";
 
 export default function PromotersPage() {
+  const router = useRouter();
   const [organizations, setOrganizations] = useState<Organization[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -38,6 +41,18 @@ export default function PromotersPage() {
   useEffect(() => {
     load();
   }, []);
+
+  async function viewDashboard(org: Organization) {
+    setBusyId(org.id);
+    const error = await enterImpersonation(org.id);
+    if (error) {
+      toast.add({ title: error, type: "error" });
+      setBusyId(null);
+      return;
+    }
+    router.push("/dashboard");
+    router.refresh();
+  }
 
   async function toggleStatus(org: Organization) {
     const nextStatus = org.status === "active" ? "suspended" : "active";
@@ -113,6 +128,14 @@ export default function PromotersPage() {
                     </TableCell>
                     <TableCell>{new Date(org.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={busyId === org.id || org.status === "suspended"}
+                        onClick={() => viewDashboard(org)}
+                      >
+                        View dashboard
+                      </Button>{" "}
                       <Button
                         variant="outline"
                         size="sm"

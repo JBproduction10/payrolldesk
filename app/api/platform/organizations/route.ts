@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import auth from "@/auth";
+import { hasPlatformAdminAuthority } from "@/lib/platform-auth";
 import { createOrganization, listOrganizations } from "@/lib/db/organizations";
 import { createPromoterAdmin } from "@/lib/db/users";
 import { sendInviteEmail } from "@/lib/email";
@@ -14,7 +15,7 @@ async function inviteBaseUrl() {
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user || session.user.role !== "platform_admin") {
+  if (!hasPlatformAdminAuthority(session)) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
@@ -29,7 +30,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "platform_admin") {
+  if (!hasPlatformAdminAuthority(session)) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
