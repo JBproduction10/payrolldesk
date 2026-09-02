@@ -104,9 +104,7 @@ export function CreateOrganizationDialog({ onCreated }: { onCreated: () => void 
         if (!next) reset();
       }}
     >
-      <DialogTrigger asChild>
-        <Button>Add Promoter</Button>
-      </DialogTrigger>
+      <DialogTrigger render={<Button>Add Promoter</Button>} />
       <DialogContent>
         {result ? (
           <>

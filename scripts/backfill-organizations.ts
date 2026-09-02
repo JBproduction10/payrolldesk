@@ -46,7 +46,7 @@ async function main() {
 
   const db = await getDb();
   const superAdmins = await db
-    .collection("users")
+    .collection<import("../lib/db/users").UserDoc>("users")
     .find({ role: "super_admin" })
     .toArray();
 
@@ -64,8 +64,9 @@ async function main() {
 
   let created = 0;
   let skipped = 0;
+  let explicitNameUsed = false;
 
-  for (const [index, admin] of superAdmins.entries()) {
+  for (const admin of superAdmins) {
     const existing = await getOrganizationByOwnerId(admin._id);
     if (existing) {
       console.log(`  Skipping ${admin.email} — already has Organization "${existing.name}".`);
@@ -73,11 +74,12 @@ async function main() {
       continue;
     }
 
-    // Only apply the CLI-provided name to the first account backfilled in
-    // this run, so running this against a multi-promoter database doesn't
-    // silently give every organization the same name.
-    const useExplicitName = index === 0 || created === 0;
+    // Only apply the CLI-provided name to the first account actually
+    // backfilled in this run, so running this against a multi-promoter
+    // database doesn't silently give every organization the same name.
+    const useExplicitName = !explicitNameUsed;
     const name = useExplicitName && explicitOrgName ? explicitOrgName : `${admin.name}'s Organization`;
+    if (useExplicitName && explicitOrgName) explicitNameUsed = true;
 
     // Auto-detect whether this promoter already has a treasury company by
     // checking for any "treasury"-role team member under their workspace —
