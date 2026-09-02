@@ -2,6 +2,24 @@ export type ID = string;
 
 export type Currency = "USD" | "NGN" | "GBP" | "EUR" | "KES" | "ZAR" | "GHS" | "CDF" | "XAF";
 
+/**
+ * A promoter's business — the tenant that owns one or more schools (Clients)
+ * and, optionally, a treasury company that centralizes their finances.
+ * `ownerId` points at that promoter's `super_admin` user; every Client,
+ * Employee, Student, etc. scoped to `ownerId` (via `orgOwnerId`) belongs to
+ * this Organization. Managed by `platform_admin` accounts, which sit outside
+ * any single Organization.
+ */
+export interface Organization {
+  id: ID;
+  name: string; // e.g. "Kalonji Group"
+  ownerId: ID; // the promoter's super_admin user id
+  hasTreasuryCompany: boolean;
+  treasuryCompanyName?: string;
+  status: "active" | "suspended";
+  createdAt: string;
+}
+
 export interface Client {
   id: ID;
   name: string;
@@ -322,6 +340,10 @@ export interface PayrollState {
 /* -------------------------- roles & accounts -------------------------- */
 
 export type Role =
+  /** Platform-level operator — manages Organizations (promoters) themselves,
+   *  not any one promoter's schools or payroll data. Not scoped to an
+   *  orgOwnerId. */
+  | "platform_admin"
   | "super_admin"
   | "promoter"
   | "school_admin"

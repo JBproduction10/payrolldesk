@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "backfill-organizations": "tsx scripts/backfill-organizations.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

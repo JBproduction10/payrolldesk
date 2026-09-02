@@ -10,6 +10,7 @@ import type { Role } from "@/lib/types";
 const ASSIGNABLE_ROLES: Role[] = ["promoter", "school_admin", "teacher", "finance", "treasury", "cashier", "intendance"];
 
 const ROLE_LABEL: Record<Role, string> = {
+  platform_admin: "Platform admin",
   super_admin: "Super admin",
   promoter: "Promoter",
   school_admin: "School admin",

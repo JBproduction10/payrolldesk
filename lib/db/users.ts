@@ -86,7 +86,19 @@ export async function hasAnyUser(): Promise<boolean> {
   return count > 0;
 }
 
-/** Creates the very first account (one-time bootstrap via /setup) — a super_admin owning a fresh workspace. */
+/** True once a platform_admin exists — /setup only ever bootstraps this one account. */
+export async function hasAnyPlatformAdmin(): Promise<boolean> {
+  const users = await usersCollection();
+  const count = await users.countDocuments({ role: "platform_admin" }, { limit: 1 });
+  return count > 0;
+}
+
+/**
+ * Creates the very first account (one-time bootstrap via /setup) — a
+ * platform_admin, not tied to any promoter's Organization. Every promoter
+ * workspace after this is created by a platform_admin via
+ * createPromoterAdmin(), not through /setup.
+ */
 export async function createBootstrapAdmin(params: {
   name: string;
   email: string;
@@ -98,13 +110,41 @@ export async function createBootstrapAdmin(params: {
     name: params.name.trim(),
     email: params.email,
     passwordHash: params.passwordHash,
-    role: "super_admin",
+    role: "platform_admin",
     orgOwnerId: id,
     clientId: null,
     employeeId: null,
     inviteToken: null,
     inviteExpires: null,
   });
+}
+
+/**
+ * Creates a new promoter's owning account — pending, no password yet, same
+ * invite-token flow as createTeamMember(). Called by a platform_admin when
+ * adding a new Organization; the returned user's `_id` becomes that
+ * Organization's `ownerId`, and everything scoped to it (Clients, Employees,
+ * etc.) uses this id as `orgOwnerId`.
+ */
+export async function createPromoterAdmin(params: {
+  name: string;
+  email: string;
+}): Promise<{ user: UserDoc; inviteToken: string }> {
+  const id = `u_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const inviteToken = crypto.randomBytes(32).toString("hex");
+  const user = await insertUser({
+    _id: id,
+    name: params.name.trim(),
+    email: params.email,
+    passwordHash: "",
+    role: "super_admin",
+    orgOwnerId: id,
+    clientId: null,
+    employeeId: null,
+    inviteToken,
+    inviteExpires: new Date(Date.now() + INVITE_TTL_MS).toISOString(),
+  });
+  return { user, inviteToken };
 }
 
 /**

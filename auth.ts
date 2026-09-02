@@ -2,6 +2,7 @@ import NextAuth, { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { findUserByEmail } from "@/lib/db/users";
+import { getOrganizationByOwnerId } from "@/lib/db/organizations";
 
 export const authOptions = {
   session: {
@@ -68,6 +69,26 @@ export const authOptions = {
 
         if (!valid) {
           return null;
+        }
+
+        // Block sign-in for anyone under a suspended promoter organization.
+        // platform_admin accounts aren't scoped to an Organization, so skip
+        // this check for them.
+        if (user.role !== "platform_admin") {
+          try {
+            const org = await getOrganizationByOwnerId(user.orgOwnerId);
+            if (org && org.status === "suspended") {
+              throw new Error("This organization has been suspended.");
+            }
+          } catch (err) {
+            if (err instanceof Error && err.message.includes("suspended")) {
+              throw err;
+            }
+            // Organization lookup failing shouldn't block sign-in for
+            // promoters whose Organization record doesn't exist yet
+            // (e.g. pre-migration accounts) — fail open, not closed.
+            console.error("Organization status check failed:", err);
+          }
         }
 
         return {
