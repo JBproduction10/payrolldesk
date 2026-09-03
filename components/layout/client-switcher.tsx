@@ -18,18 +18,6 @@ export function ClientSwitcher() {
   const t = useTranslations("topbar");
   const { clients, activeClient, setActiveClient } = usePayroll();
 
-  if (clients.length === 0) {
-    return (
-      <Link
-        href="/clients"
-        className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium text-muted-foreground outline-none hover:bg-muted hover:text-foreground"
-      >
-        <Plus className="size-4" />
-        {t("manageClients")}
-      </Link>
-    );
-  }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex min-w-0 items-center gap-2.5 rounded-xl px-1.5 py-1 text-left outline-none hover:bg-muted">

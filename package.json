@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "tsx scripts/seed.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "backfill-organizations": "tsx scripts/backfill-organizations.ts",
-    "create-super-admin": "tsx scripts/create-super-admin.ts"
+    "backfill-organizations": "tsx scripts/backfill-organizations.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -48,11 +48,5 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "^5"
-  },
-  "allowScripts": {
-    "@parcel/watcher@2.6.0": true,
-    "@swc/core@1.16.1": true,
-    "esbuild@0.28.2": true,
-    "unrs-resolver@1.12.2": true
   }
 }

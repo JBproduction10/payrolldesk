@@ -29,7 +29,7 @@ import type {
   Student,
   Templates,
 } from "./types";
-import { buildEmptyState, buildInitialState } from "./seed";
+import { buildInitialState } from "./seed";
 import { seedHistory } from "./seed-history";
 import { makePayslip, payslipStatus } from "./payroll";
 import { shiftPeriod, uid } from "./format";
@@ -126,7 +126,9 @@ const PayrollContext = createContext<PayrollContextValue | null>(null);
 
 export function PayrollProvider({ children }: { children: React.ReactNode }) {
   const { data: sessionData, status } = useSession();
-  const [state, setState] = useState<PayrollState>(() => buildEmptyState());
+  const [state, setState] = useState<PayrollState>(() =>
+    seedHistory(buildInitialState()),
+  );
   const [hydrated, setHydrated] = useState(false);
   const [synced, setSynced] = useState(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

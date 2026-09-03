@@ -1,29 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname } from "next/navigation";
-import { usePayroll } from "@/lib/store";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import { AddFirstSchoolPrompt } from "./add-first-school-prompt";
-
-// Pages that must stay reachable even with zero schools — otherwise there'd
-// be no way to add the first one, or to switch to a different promoter.
-const EMPTY_STATE_ALLOWED_PATHS = ["/clients", "/promoters"];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { hydrated, clients } = usePayroll();
-  const pathname = usePathname();
-  const isAllowedWhileEmpty = EMPTY_STATE_ALLOWED_PATHS.some((p) => pathname?.startsWith(p));
-
-  // A freshly-created organization has no schools yet — every other page
-  // (and the Sidebar/Topbar themselves, via ClientSwitcher) assume an
-  // active school exists, so show a dedicated prompt instead of the normal
-  // shell until the first one is added.
-  if (hydrated && clients.length === 0 && !isAllowedWhileEmpty) {
-    return <AddFirstSchoolPrompt />;
-  }
-
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-background print:h-auto print:overflow-visible">
       <Sidebar />
