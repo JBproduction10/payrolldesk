@@ -17,12 +17,11 @@ import type {
   SupplyInventoryCount,
   SupplySale,
 } from "../types";
-import { buildInitialState } from "../seed";
-import { seedHistory } from "../seed-history";
+import { buildEmptyState } from "../seed";
 import { makePayslip } from "../payroll";
 
 interface WorkspaceDoc {
-  _id: string; // orgOwnerId (the super_admin's user id) — one document per organisation
+  _id: string; // orgOwnerId — one document per organization
   state: PayrollState;
   updatedAt: string;
 }
@@ -32,15 +31,16 @@ function workspaces() {
 }
 
 /**
- * Returns an organisation's payroll workspace, seeding a fresh demo
- * workspace (and persisting it) the first time it's accessed.
+ * Returns an organization's payroll workspace, creating a genuinely empty
+ * one (and persisting it) the first time it's accessed. No demo data —
+ * every real organization starts from a blank slate.
  */
 export async function getWorkspace(orgOwnerId: string): Promise<PayrollState> {
   const col = await workspaces();
   const existing = await col.findOne({ _id: orgOwnerId });
   if (existing) return existing.state;
 
-  const seeded = seedHistory(buildInitialState());
+  const seeded = buildEmptyState();
   await col.insertOne({
     _id: orgOwnerId,
     state: seeded,

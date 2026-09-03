@@ -1224,3 +1224,32 @@ export function buildInitialState(): PayrollState {
     period,
   };
 }
+
+/**
+ * A genuinely blank workspace — no demo clients, employees, students, or
+ * history. Used for every real organization the first time its data is
+ * loaded (see getWorkspace()), and as the client's initial state before the
+ * real fetch resolves. `fields`/`templates` keep their system defaults
+ * (message templates, the "Basic Salary" field auto-added per client) since
+ * those are app configuration, not seed data — everything else starts empty.
+ */
+export function buildEmptyState(): PayrollState {
+  return {
+    clients: [],
+    activeClientId: "",
+    departments: [],
+    employees: [],
+    fields: [],
+    payslips: [],
+    students: [],
+    feePayments: [],
+    expenses: [],
+    requisitions: [],
+    supplyDeliveries: [],
+    supplySales: [],
+    supplyInventoryCounts: [],
+    logs: [],
+    templates,
+    period: toPeriod(new Date()),
+  };
+}

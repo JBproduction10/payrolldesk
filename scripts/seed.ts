@@ -33,7 +33,9 @@ async function main() {
   // Imported after env vars are loaded, since lib/mongodb.ts reads
   // MONGODB_URI at module-eval time.
   const { seedDemoUsers } = await import("../lib/db/seed-users");
-  const { getWorkspace } = await import("../lib/db/workspace");
+  const { getWorkspace, saveWorkspace } = await import("../lib/db/workspace");
+  const { buildInitialState } = await import("../lib/seed");
+  const { seedHistory } = await import("../lib/seed-history");
 
   console.log("Seeding demo users...");
   const users = await seedDemoUsers();
@@ -41,11 +43,21 @@ async function main() {
 
   // Every demo user shares one workspace, keyed by the admin's id
   // (orgOwnerId) — this matches how the app looks up a workspace on login.
-  // getWorkspace() only inserts a fresh seeded workspace if one doesn't
-  // already exist for this orgOwnerId, so this is a no-op once seeded.
+  // getWorkspace() creates an *empty* workspace by default for any org that
+  // doesn't have one yet (real promoters start blank) — so for the demo
+  // org specifically, we check first and, if it's genuinely new, replace
+  // that empty workspace with the full demo dataset.
   const orgOwnerId = "u_demo_admin";
   console.log("Ensuring demo workspace data...");
-  const state = await getWorkspace(orgOwnerId);
+  const existing = await getWorkspace(orgOwnerId);
+  const isFreshlyCreated = existing.clients.length === 0;
+  const state = isFreshlyCreated
+    ? await (async () => {
+        const demo = seedHistory(buildInitialState());
+        await saveWorkspace(orgOwnerId, demo);
+        return demo;
+      })()
+    : existing;
   console.log(
     `  Workspace ready: ${state.clients.length} client(s), ${state.employees.length} employee(s), ${state.students.length} student(s).`,
   );
